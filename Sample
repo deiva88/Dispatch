@@ -1,0 +1,125 @@
+Enter file contents hereusing System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Device.Location;
+using System.Data;
+using System.Xml;
+using MongoDB.Driver;
+using MongoDB.Bson;
+using System.Collections;
+
+
+namespace TechnicianLocation
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            //var coord = new GeoCoordinate(1.000, 23.00);
+
+
+            string url = string.Format("http://maps.googleapis.com/maps/api/geocode/xml?latlng={0},{1}&sensor=false", "13.0151931", "80.2038949");
+            XmlDocument xml = new XmlDocument();
+            xml.Load(url);
+
+
+            string connectionString = "mongodb://113.128.164.131";
+
+            var server = MongoServer.Create(connectionString);
+
+            if (server.State == MongoServerState.Disconnected)
+
+                server.Connect();
+
+            var OneConsoleDB = server.GetDatabase("One");
+
+            //Technician tech1 = new Technician();
+            //tech1.Name = "John";
+            //tech1.location = "ABC";
+            //tech1.expertize = "FIOS";
+
+
+
+            if (!OneConsoleDB.CollectionExists("NextMessages"))
+
+                OneConsoleDB.CreateCollection("NextMessages", null);
+
+
+            MongoCollection techns = OneConsoleDB.GetCollection("NextMessages");
+            //techns.Insert(tech1);
+
+            MongoCollection<BsonDocument> technss =
+       OneConsoleDB.GetCollection<BsonDocument>("NextMessages");
+            BsonDocument technician = new BsonDocument {
+                { "Name", "Tamil" },
+                { "location", "CDE" },
+                { "expertize", "HSI" },
+                };
+
+            technss.Insert(technician);
+            //var NextMessages = OneConsoleDB.GetCollection("NextMessages");
+
+            //server.Disconnect();
+
+            Console.WriteLine("Server get connected in to this" + connectionString + "Server");
+            string databasevale = "";
+
+            foreach(string value in server.GetDatabaseNames())
+            {
+                Console.WriteLine("server name " + value + " Server close");
+            }
+
+
+            MongoCollection<Technicians> technicians =
+       OneConsoleDB.GetCollection<Technicians>("NextMessages");
+            foreach (Technicians department in technicians.FindAll())
+            {
+                Console.WriteLine(department.expertize + " " + department.location + " " + department.Name);
+            }
+
+            
+            //Technician storedvalue = (Technician) OneConsoleDB.GetCollection("NextMessages").FindAll();
+            
+            //OneConsoleDB.GetCollection("NextMessages").Find({})
+            //var query = Query.EQ("","");
+            //Technician techf = techns.FindOneAs()
+
+            server.Disconnect();
+
+            Console.ReadLine();
+            //XElement xml = XElement.Load(url);
+
+            // verifica se o status é ok
+            //if (xml.Element("status").Value == "OK")
+            //{
+            //    //Formatar a resposta
+            //   string value = string.Format("<strong>Origem</strong>: {0}",
+            //        //Pegar endereço de origem 
+            //        xml.Element("result").Element("formatted_address").Value);
+            //    //Pegar endereço de destino                    
+            //}
+            //else
+            //{
+            //    string val = String.Concat("Ocorreu o seguinte erro: ", xml.Element("status").Value);
+            //}
+
+            Console.WriteLine("ServiceStarted");
+            Console.ReadLine();
+
+
+
+            
+        }
+    }
+
+
+    public class Technicians
+    {
+        public string Name;
+        public string location;
+        public string expertize;
+    }
+
+}
