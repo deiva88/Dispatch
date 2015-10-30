@@ -1,0 +1,1 @@
+Enter file contents here @Html.ActionLink(redirectionParams[0].Trim(), "GUIDButtonClick", new { LogViewer_SelectedGuid = redirectionParams[0].Trim(), LogViewer_SelectedDBID = redirectionParams[1].Trim() }, new { @class = "ViewGUIDClick", target = "_blank" })
