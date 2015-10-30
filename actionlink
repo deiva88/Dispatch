@@ -1,55 +1,397 @@
-@using NCOGWebTools.Models
-@{
-    Layout = null;
-}
-@Styles.Render("~/Content/css")
 
-@if (ViewBag.dsTransLogList != null)
+
+ /*Set padding to keep content from hitting the edges */
+.body-content {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    max-width: 80%;
+}
+
+/* styles for validation helpers */
+.field-validation-error {
+    color: #b94a48;
+}
+
+.field-validation-valid {
+    display: none;
+}
+
+input.input-validation-error {
+    border: 1px solid #b94a48;
+}
+
+input[type="checkbox"].input-validation-error {
+    border: 0 none;
+}
+
+.validation-summary-errors {
+    color: #b94a48;
+}
+
+.validation-summary-valid {
+    display: none;
+}
+
+body
 {
-    <div id="content" style="width :auto">
+font: "Trebuchet MS", Verdana, sans-serif;
+background-color: #272727;
+color: #696969;
+}
+h3
+{
+border-top: 3px solid #cc9900;
+font: Georgia, serif;
+color: #996600;
+}
+#main
+{
+ padding: 20px;
+background-color: #ffffff;
+border-radius: 0 4px 4px 4px;
+}
+a
+{
+color: #034af3; 
+}
+/* Menu Styles ------------------------------*/ 
+ul#menu
+{
+padding: 0px;
+position: relative;
+margin: 0;
+}
+ul#menu li
+{
+display: inline;
+}
+ul#menu li a 
+{
+background-color: #c3c3c3;
+padding: 10px 20px;
+text-decoration: none;
+line-height: 2.8em;
+/*CSS3 properties*/
+border-radius: 4px 4px 0 0;
+}
+ul#menu li a:hover
+{
+ background-color: #F7CFCF;
+} 
+/* Forms Styles ------------------------------*/ 
+fieldset
+{
+padding-left: 12px;
+ } 
+fieldset label
+{
+display: block;
+padding: 4px;
+}
+ input[type="text"], input[type="password"]
+{
+width: 80%;
+}
+ input[type="submit"]
+{
+padding: 4px;
+}
+/* Data Styles ------------------------------*/ 
+table.data
+{
+background-color:#ffffff;
+ border:1px solid #c3c3c3;
+border-collapse:collapse;
+width:100%;
+}
+ table.data th
+{
+background-color:#e8eef4;
+border:1px solid #c3c3c3;
+ padding:2px;
+}
+table.data td 
+{
+border:1px solid #c3c3c3;
+ padding:1px;
+ font-size: 9px;
+} 
 
-        @*<table class="ListView" align="center">*@
-            <table class="table table-striped">
-
-                <thead>
-                    <tr>
-                        <th class="Gridth">strGUID</th>
-                        <th class="Gridth">strTrackingId</th>
-                        <th class="Gridth">strServiceName</th>
-                        <th class="Gridth">dtmAppTimeStamp</th>
-                        <th class="Gridth">dtmUniversalTime</th>
-                        <th class="Gridth">strServerName</th>
-                    </tr>
-                </thead>
-                <tbody>
-
-                    @foreach (System.Data.DataRow row in Model.dsTransLogList.Rows)
-                    {
-                        <tr>
-                            @for (int i = 0; i < row.ItemArray.Length; i++)
-                            {
-
-                                if (i == 0)
-                                //if (row.Table.Columns[i].ColumnName == "Link")
-                                {
-                                    string[] redirectionParams = row.ItemArray[i].ToString().Split(new char[] { '|' });
-                                    <td class="Gridtd">
-                                        @Html.ActionLink(redirectionParams[0].Trim(), "GUIDButtonClick", new { LogViewer_SelectedGuid = redirectionParams[0].Trim(), LogViewer_SelectedDBID = redirectionParams[1].Trim() }, new { @class = "ViewGUIDClick", target = "_blank" })
-                                        @*<a href="#">@row.ItemArray[i].ToString()</a> new { LogViewer_SelectedGuid =redirectionParams[0].Trim(), LogViewer_SelectedDBID = redirectionParams[1].Trim(), ResBand = row.Table.Columns[i], selectioncriteria = "BandwiseEmpDet" }*@
-                                    </td>
-                                }
-
-                                else
-                                {
-                                    <td class="Gridtd">@(row.ItemArray[i].ToString())</td>
-                                }
-                            }
-                        </tr>
-                    }
-                </tbody>
-            </table>
-
-    </div>
-     
+table.dataTableSmall {
+    border: 1px solid #9bbddb;
+    font-size: 13px;
 }
 
+    table.dataTableSmall th, table.dataTableSmall .tblheader td {
+        padding: 1px 1px;
+        background-color: #c4d8ea;
+        border-bottom: 1px solid #9bbddb;
+        border-right: 1px solid #9bbddb;
+        text-align: left;
+        border-collapse: collapse;
+        font-weight: bold;
+    }
+
+    table.dataTableSmall td {
+        padding: 1px 1px;
+        vertical-align: middle;
+        border-bottom: 1px solid #9bbddb;
+        border-right: 1px solid #9bbddb;
+    }
+
+
+
+    .menuTemplate4
+{
+
+    margin: 0 auto; width: auto;float:left;   
+    position:relative;
+    z-index:4;
+    height: 36px;
+    background: #2777A3 url(bg.gif);
+    border: 1px solid #036;
+    font-family: Arial, Helvetica, sans-serif;
+    list-style: none;
+    padding: 0;
+}
+    .menuTemplate4 li
+{
+    padding: 0;
+    float: left;
+    height: 36px;
+    position: relative;
+    color: black;
+    z-index:5;
+}
+.menuTemplate4 li:hover, .menuTemplate4 li.onhover
+{
+    border-top:1px solid #CC0000;
+}
+
+.menuTemplate4 a
+{
+    padding: 0 30px;
+    line-height: 35px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+    outline: 0;
+    text-decoration: none;
+    color: white;
+    position: relative;
+}
+.menuTemplate4 li:hover a, .menuTemplate4 li.onhover a
+{
+    background-color: #80CBF0;
+    color: #000;    
+    z-index: 9;
+}
+.menuTemplate4 a.arrow
+{
+    background: url(arrow.gif) no-repeat right center;
+}
+
+.menuTemplate4 li.menuRight
+{
+    float: right;
+    margin-right: 0px;
+}
+
+.menuTemplate4 li.separator
+{
+    display:none;
+}
+
+.menuTemplate4 .drop
+{
+    position: absolute;
+    z-index:5;
+    left: -9999px;
+    border: 1px solid #DDD;
+    border-bottom:3px solid #990000;
+    background: #FFF;            
+    text-align: left;
+    padding: 20px;  
+    color:#0F4F89;
+    top:34px;              
+}
+
+.menuTemplate4 .drop a
+{
+    padding-left: 0px;
+    padding-right: 0px;
+    line-height: 26px;
+    font-size: 12px;
+    font-weight: normal;
+    display: inline;
+    text-align: left;    
+    position: static;
+    z-index: 0;
+    background-image:none;
+}
+
+.menuTemplate4 li:hover .drop, .menuTemplate4 li.onhover .drop
+{
+    left: 1px;
+    background:#DAF0FE url(bg-right.png) no-repeat right bottom;
+    width:62px;
+}
+.menuTemplate4 li:hover .dropToLeft, .menuTemplate4 li.onhover .dropToLeft
+{
+    left: auto;
+    right: -1px;
+    background:white url(bg-left.png) no-repeat 0 bottom;
+}
+.menuTemplate4 li:hover .dropToLeft2, .menuTemplate4 li.onhover .dropToLeft2
+{
+    left: auto;
+    right: -60px;
+}
+
+.menuTemplate4 div.drop div div
+{
+    padding: 6px 20px;
+}
+.menuTemplate4 li:hover .drop a, .menuTemplate4 li.onhover .drop a
+{
+    background: none;
+    background-image:none;
+    padding:0 0;
+}
+.menuTemplate4 div.drop div a
+{
+    line-height: 24px;  
+    color: #0F4F89;
+    background:none;
+}
+.menuTemplate4 div.drop div a:hover
+{
+    text-decoration:underline;
+    cursor:pointer;
+    color:Red;
+}
+
+.menuTemplate4 div.left {float:left;}
+
+.decor4_1 
+{
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+
+    -moz-box-shadow: 0px 1px 4px #999;
+    -webkit-box-shadow: 0px 1px 4px #999;
+    box-shadow: 0px 1px 4px #999;
+
+}
+
+.decor4_2 
+{
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    border-radius: 4px;
+
+    -moz-box-shadow: 0 4px 10px white;
+    -webkit-box-shadow: 0 4px 10px white;
+    box-shadow: 0 4px 10px #CCC;  
+    background: -webkit-gradient(linear, left top, left bottom, from(#777777), to(#303030));
+        background: -moz-linear-gradient(top, #777777, #303030);
+}
+
+.marginwidth {
+    margin-top:20px
+}
+ListView {
+  max-width: 100%;
+  background-color: white;
+  border: 1px solid black;
+}
+
+th {
+  text-align: left;
+}
+
+.ListView {
+  width: 100%;
+  /*margin-bottom: 25px;
+  margin-top: 25px;
+  margin-left:25px;
+  margin-right:25px;*/
+}
+
+.ListView thead > tr > th,
+.ListView tbody > tr > th,
+.ListView tfoot > tr > th,
+.ListView thead > tr > td,
+.ListView tbody > tr > td,
+.ListView tfoot > tr > td {
+  padding: 8px;
+  line-height: 1.428571429;
+  vertical-align: top;
+  border-top: 1px solid #ffffff;
+}
+
+.ListView thead > tr > th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #ffffff;
+}
+
+.ListView caption + thead tr:first-child th,
+.ListView colgroup + thead tr:first-child th,
+.ListView thead:first-child tr:first-child th,
+.ListView caption + thead tr:first-child td,
+.ListView colgroup + thead tr:first-child td,
+.ListView thead:first-child tr:first-child td {
+  border-top: 2px solid #ffffff;
+}
+
+.ListView tbody + tbody {
+  border-top: 2px solid #ffffff;
+}
+
+.ListView .ListView {
+  background-color: #ffffff;
+}
+.Grid {background-color: #fff; margin: 5px 0 10px 0; border: solid 1px #525252; border-collapse:collapse; font-family:Calibri; color:#000000; }
+
+.Gridtd {
+
+      /*padding: 2px;*/ 
+       /*padding : 2px 1px; */
+      /*border: solid 1px #c1c1c1;*/ }
+      
+.Gridth  {
+
+      /*padding : 2px 1px; 
+
+      
+
+      border-left: solid 1px #525252; 
+
+      font-size: 0.9em; */
+       /*border-left: solid 1px #525252;*/ 
+       color: #fff; 
+       border-color: #ffffff;
+    background: #3276b1; /* Old browsers */
+
+    }
+
+.Grid .alt {
+
+      background:#BDBDBD ; }
+
+.Grid .pgr {background: #363670 ; }
+
+.Grid .pgr table { margin: 3px 0; }
+
+.Grid .pgr td { border-width: 0; padding: 0 6px; border-left: solid 1px #666; font-weight: bold; color: #fff; line-height: 12px; }   
+
+.Grid .pgr a { color: Gray; text-decoration: none; }
+
+.Grid .pgr a:hover { color: #000; text-decoration: none; }
