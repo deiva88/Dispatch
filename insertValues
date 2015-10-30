@@ -1,0 +1,61 @@
+Enter file contents hereinsert into tCustomerInfo values  ('VZT4098', '350,5th Ave,EmpireStateBuilding')
+insert into tcustomerinfo values('VZT4099','31, Milkstreet,Boston, MA')
+
+update tcustomerinfo set strAddress='350,5th Ave,EmpireStateBuilding NY' where 
+
+select * from tcustomerinfo
+
+Delete  from tcustomerInfo where strCustomerId='John'
+
+Delete from tcustomerInfo where strcustomerid='Bob'
+
+insert into tTechInfo(strTechId, strTechName, intMobileNumber, strExpertise, strLoction,
+dtTime, intLatitude, intLongitude)
+ values('TN62515','John',4563456790,'FIOSTV','171 MilkStreet Boston MA',
+CURRENT_TIMESTAMP,42.358252,-71.053388)
+
+insert into tTechInfo(strTechId, strTechName, intMobileNumber, strExpertise, strLoction,
+dtTime, intLatitude, intLongitude)
+ values('TN62516','Bob',4563456780,'FIOSTV','159 MilkStreet Boston MA',
+CURRENT_TIMESTAMP,42.358008,-71.053388)
+
+insert into tTechInfo(strTechId, strTechName, intMobileNumber, strExpertise, strLoction,
+dtTime, intLatitude, intLongitude)
+ values('TN62517','Susan',4563456750,'FIOSVOICe','159 WalnutStreet Boston MA',
+CURRENT_TIMESTAMP,42.290232,-71.039633)
+
+
+insert into tTechInfo(strTechId, strTechName, intMobileNumber, strExpertise, strLoction,
+dtTime, intLatitude, intLongitude)
+ values('TN62518','Walter',4563456720,'FIOSINTERNET','70 PARKAVENUE NY',
+CURRENT_TIMESTAMP,40.749832,-73.979752)
+
+insert into tTechInfo(strTechId, strTechName, intMobileNumber, strExpertise, strLoction,
+dtTime, intLatitude, intLongitude)
+ values('TN62519','Clare',4563456735,'HSI','W 38thStreet NY',
+CURRENT_TIMESTAMP,40.754707,-73.991633)
+
+select * from tCustomerInfo
+select * from tTechInfo
+
+
+select strTechId, intLatitude, intLongitude from tTechInfo where strExpertise ='FIOSTV' and intLatitude between 42.308122 and 42.538008 
+and intLongitude between -71.201025  and -71.001025
+
+
+
+select strTechId, intLatitude, intLongitude from tTechInfo where strExpertise ='FIOSTV' and
+acos(sin(42.358008) * sin(intLatitude) + cos(42.358008) * cos(intLatitude) * cos(intLongitude - (-71.053388))) * 6371 <= 1
+
+exec GetNearestTechnician 'FIOSTV', 42.358008, -71.053388
+
+exec UpdateTechnicianLocation 'TN62518','','71 ParkAvenue NY',40.749832,-73.979752
+
+
+
+
+
+
+
+insert into tTechLocationInfo values('TN62515',CURRENT_TIMESTAMP,'Milkstreet')
+
