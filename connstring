@@ -1,0 +1,2 @@
+Enter file contents here<add name="EastRptDb" connectionString="User ID=NCOGUSER;Password=NCOGUSER;database=NCOG;server=113.130.192.101,1433" providerName="System.Data.SqlClient" />
+    <add name="WestRptDb" connectionString="Data Source=112.80.92.52\COGTFSQL03,1513;Initial Catalog=NCOGStatistics;Persist Security Info=True;User ID=ncoguser;Password=nc0gu$er" providerName="System.Data.SqlClient" />
