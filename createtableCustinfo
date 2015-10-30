@@ -5,6 +5,7 @@ GO
 DROP TABLE [dbo].[tCustomerInfo]
 GO
 
+
 /****** Object:  Table [dbo].[tCustomerInfo]    Script Date: 10/30/2015 3:29:11 AM ******/
 SET ANSI_NULLS ON
 GO
