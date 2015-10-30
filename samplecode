@@ -1,0 +1,248 @@
+Enter file contents here@using NCOGWebTools.Models
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(".datepicker").datepicker();
+
+        $('.dbsrchoptChange').change(function () {
+
+            var id = $(this).attr("id");
+            if (id == "rbByEnvt") {
+                rbByEnvtChecked = true;
+            }
+            else {
+                rbByEnvtChecked = false;
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "/LogViewer/LogViewerChange",
+                enctype: "application/json",
+                data: JSON.stringify({ 'rbByEnvtChecked': rbByEnvtChecked }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+
+                success: function (lstEnv) {
+
+                    $("#dbList").empty();
+
+                    for (var i = 0; i < lstEnv.length; i++) {
+                        $("#dbList").append($("<option></option>").val(lstEnv[i].Value).html(lstEnv[i].Text));
+                    }
+
+                }
+            });
+        }
+        );
+
+        $('#dbList').change(function () {
+
+            var dbListval = $('#dbList').val();
+            var tbRgnHdval = $('#RgnHidden').val();
+            var ddlTrackIdPrefixval = $('#ddlTrackIdPrefix').val();
+            var ddlTrackIdPrefixtext = $("#ddlTrackIdPrefix option:selected").text();
+            $.ajax({
+                type: "POST",
+                url: "/LogViewer/dbList_SelectedIndexChange",
+                enctype: "application/json",
+                data: JSON.stringify({ 'dbListval': dbListval, 'tbRgnHdval': tbRgnHdval, 'ddlTrackIdPrefixval': ddlTrackIdPrefixval, 'ddlTrackIdPrefixtext': ddlTrackIdPrefixtext }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+
+                success: function (lstEnv, tbRgnHdval) {
+                    if (lstEnv.lsttrackPref.length > 0) {
+                        $("#ddlTrackIdPrefix").empty();
+                        for (var i = 0; i < lstEnv.lsttrackPref.length; i++) {
+                            $("#ddlTrackIdPrefix").append($("<option></option>").val(lstEnv.lsttrackPref[i].Value).prop("selected", lstEnv.lsttrackPref[i].Selected).html(lstEnv.lsttrackPref[i].Text));
+                        }
+                        $('#RgnHidden').val(lstEnv.tbRgnHdval);
+                    }
+
+                }
+            });
+        });
+        $('#ddlTrackIdPrefix').change(function () {
+            var ddlTrackIdPrefixval = $('#ddlTrackIdPrefix').val();
+            $('#tbTrkId').val(ddlTrackIdPrefixval);
+
+            //window.location.href = "/LogViewer/LogViewer?dblistval=" + dblistval + "";
+        });
+
+
+    });
+    function OnSuccess(data) {
+
+
+        $("#container").html(data);
+    }
+
+    function OnFailure() {
+
+        alert("error");
+    }
+
+</script>
+@using (Ajax.BeginForm("RunQueryButtonClick", "LogViewer", new AjaxOptions { HttpMethod = "POST", OnSuccess = "OnSuccess", OnFailure = "OnFailure", UpdateTargetId = "container" }, new { id = "Form" }))
+{
+    <div class="row" style="width:100%;">
+        <div class="btn btn-warning" style="background-color: #F33446; width: 100%; text-align: center; font-family: Verdana; font-size: 18px; border: none;">Log Viewer</div>
+    </div>
+    <div class="row" style="border: 2px solid #fff; width:100%;">
+        <div class="col-md-4 header-right-blc-2">
+            <div class="form-group">
+                <b>Search By:</b>
+                @{
+    bool drpval;
+    if (ViewData["rbByEnvtChecked"] != null && (bool)ViewData["rbByEnvtChecked"] != true)
+    {
+        drpval = true;
+    }
+    else
+    {
+        drpval = false;
+    }
+                }
+                <div class="radio">
+                    @Html.RadioButton("dbsrchopt", "Environment", (bool)ViewData["rbByEnvtChecked"], new { @class = "dbsrchoptChange", id = "rbByEnvt" }) Environment
+                </div>
+                <div class="radio">
+                    @Html.RadioButton("dbsrchopt", "Database", drpval, new { @class = "dbsrchoptChange", id = "rbByDb" }) Database
+                </div>
+            </div>
+            <div class="form-group">
+                <b>Environment:</b>
+                @Html.DropDownList("dbList", (IEnumerable<SelectListItem>)ViewData["Environment"], new { id = "dbList", @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px;height:28px; color:#222;" })
+            </div>
+            <div class="form-group">
+                <b>Primary Serach:</b>
+                @Html.DropDownList("ddlPrimarySearch", new SelectList(new List<SelectListItem>()
+                        {
+                            new SelectListItem() { Text= "1", Value = "Track ID Equals" },
+                            new SelectListItem() { Text= "2", Value = "Track ID Starts With"},
+                            new SelectListItem() { Text= "3", Value = "Track ID Contains"},
+                            new SelectListItem (){Text="4",Value ="GUID/Log ID"},
+                            new SelectListItem() { Text= "9", Value = "GUID/Log ID Starts With" },
+                            new SelectListItem() { Text= "5", Value = "Client Tracking ID From Header"},
+                            new SelectListItem() { Text= "6", Value = "BTN"},
+                            new SelectListItem (){Text="7",Value ="Client IP"},
+                             new SelectListItem (){Text="8",Value ="Rep ID"}
+                        }.ToList(), "Text", "Value"), new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px;height:28px; color:#222;" })
+            </div>
+            <div class="form-group">
+                <b> Track ID Prefix:</b>
+                @Html.DropDownList("ddlTrackIdPrefix", (IEnumerable<SelectListItem>)ViewData["TrackIDPrefix"],
+                            new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px;height:28px; color:#222;" })
+            </div>
+            <div class="form-group">
+                <b>Search For:</b>
+                @Html.TextBox("tbTrkId", "MON-", new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+                <div class="form-group" style="font :8px">
+                    Note:
+                    Searching by MON- is not restricted by date/time when using 'Track ID Equals'
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 header-right-blc-2">
+            <div class="form-group">
+                <b>Start Date (MM/dd/yyyy): <font color="red"> * </font></b>
+                @Html.TextBox("calStDate", DateTime.Now.ToString("MM/dd/yyyy"), new { @class = "datepicker form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222;" })
+            </div>
+            <div class="form-group">
+                <b>Start Time:  <font color="red"> * </font></b>
+                @Html.TextBox("tbStTm", "00:00:00", new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+            </div>
+            <div class="form-group">
+                <b>End Date (MM/dd/yyyy): <font color="red"> * </font></b>
+                @Html.TextBox("calEndDt", DateTime.Now.ToString("MM/dd/yyyy"), new { @class = "datepicker form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+            </div>
+            <div class="form-group">
+                <b>End Time:  <font color="red"> * </font></b>
+                @Html.TextBox("tbEnTm", "23:59:59", new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+            </div>
+            <div class="form-group">
+                <b>Max Rows:  <font color="red"> * </font></b>
+                @Html.TextBox("tbTop", "500", new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+            </div>
+            <div class="form-group">
+                <b>Timeout:  <font color="red"> * </font></b>
+                @Html.TextBox("tbTimeout", "30", new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary btn-md" id="bRunQuery" type="submit"><i class="fa fa-recycle"></i>  Run Query</button>
+            </div>
+        </div>
+
+        <div class="col-md-4 header-right-blc-2">
+            <div class="form-group">
+                <b>Service Name </b>
+                @Html.TextBox("tbServiceName", "", new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+                <div class="radio">
+                    @Html.RadioButton("svcOpt", "rbSvcEq", true, new { @class = "", id = "rbSvcEq" }) =
+                </div>
+                <div class="radio">
+                    @Html.RadioButton("svcOpt", "rbSvcNe", false, new { @class = "", id = "rbSvcNe" }) <>
+                </div>
+                <div class="radio">
+                    @Html.RadioButton("svcOpt", "rbSvcLike", false, new { @class = "", id = "rbSvcLike" }) LIKE
+                </div>
+            </div>
+            <div class="form-group">
+                <b>Server Name</b>
+                @Html.TextBox("tbServerName", "", new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+                <div class="radio">
+                    @Html.RadioButton("srvrOpt", "rbSrvrEq", true, new { @class = "", id = "rbSrvrEq" }) =
+                </div>
+                <div class="radio">
+                    @Html.RadioButton("srvrOpt", "rbSrvrNe", false, new { @class = "", id = "rbSrvrNe" }) <>
+                </div>
+                <div class="radio">
+                    @Html.RadioButton("srvrOpt", "rbSrvrLike", false, new { @class = "", id = "rbSrvrLike" }) LIKE
+                </div>
+            </div>
+            <div class="form-group">
+                <b>Log Type</b>
+                @Html.TextBox("tbLogType", "", new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+                <div class="radio">
+                    @Html.RadioButton("ltOpt", "rbLtEq", true, new { @class = "", id = "rbLtEq" }) =
+                </div>
+                <div class="radio">
+                    @Html.RadioButton("ltOpt", "rbLtNe", false, new { @class = "", id = "rbLtNe" }) <>
+                </div>
+                <div class="radio">
+                    @Html.RadioButton("ltOpt", "rbLtLike", false, new { @class = "", id = "rbLtLike" }) LIKE
+                </div>
+            </div>
+            <div class="form-group">
+                <b>XML Name </b>
+                @Html.TextBox("tbXmlContains", "", new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+                <div class="radio">
+                    @Html.RadioButton("idOpt", "rbIdEq", true, new { @class = "dbsrchoptChange", id = "rbIdEq" }) =
+                </div>
+                <div class="radio">
+                    @Html.RadioButton("idOpt", "rbIdNe", false, new { @class = "dbsrchoptChange", id = "rbIdNe" }) <>
+                </div>
+                <div class="radio">
+                    @Html.RadioButton("idOpt", "rbIdLike", false, new { @class = "dbsrchoptChange", id = "rbIdLike" }) LIKE
+                </div>
+            </div>
+            <div class="form-group">
+                <b>Instance Data</b>
+                @Html.TextBox("tbInstanceData", "", new { @class = "form-control", style = "font-family:Calibri; width:200px; font-size:14px; height:28px; color:#222" })
+            </div>
+        </div>
+    </div>
+
+    if (ViewData["tbRgnHdval"] != null)
+    {
+        @Html.Hidden("RgnHidden", ViewData["tbRgnHdval"], new { id = "RgnHidden" });
+        //Html.TextBox("tbRgnHd", ViewData["tbRgnHdval"], new { @class = "form-control", style = "font-family:Calibri; width:16px; font-size:14px; height:28px; color:#222;Visible:false;" });
+    }
+
+}
+<div id="container" class="row" style="border: 2px solid #000; width:100%;">
+    @if (Model != null)
+    {
+        Html.RenderPartial("_LogDetails", (LogDetails)Model);
+    }
+</div>
+
