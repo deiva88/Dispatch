@@ -1,0 +1,17 @@
+CREATE procedure GetNearestTechnician
+(
+@strexpertize varchar(50),
+@intLatitude int,
+@intLongitude int
+)
+as
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+	SELECT strTechId, strTechName,intMobileNumber,strLoction from  tTechInfo where strExpertise = @strexpertize and
+acos(sin(@intLatitude) * sin(intLatitude) + cos(@intLatitude) * cos(intLatitude) * cos(intLongitude - (@intLongitude))) * 6371 <= 10
+set nocount off;
+END
