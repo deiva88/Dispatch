@@ -1,0 +1,1861 @@
+Enter file contents hereusing System;
+using System.Data;
+using System.Collections;
+using System.Data.SqlClient;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Configuration;
+using System.Web.Mvc;
+
+namespace RMTool.Models
+{
+    public class DataAccessLayer
+    {
+
+        #region Common Class variables
+        SqlParameter[] param = new SqlParameter[1];
+        string spName = string.Empty;
+        string connectionString = ConfigurationManager.AppSettings["RMDB"];
+        private void resetToNull()
+        {
+            spName = null;
+            param = null;
+        }
+        #endregion
+
+        #region Common Methods
+
+        public DataTable GetTable()
+        {
+            DataTable dtTable = new DataTable();
+            dtTable.Columns.Add("UserID", typeof(int));
+            dtTable.Columns.Add("FirstName", typeof(string));
+            dtTable.Columns.Add("LastName", typeof(string));
+
+            dtTable.Rows.Add(25, "Ave", "Maria");
+            dtTable.Rows.Add(50, "Bill", "Doe");
+            dtTable.Rows.Add(75, "John", "Gates");
+            dtTable.Rows.Add(99, "Julia", "Griffith");
+            dtTable.Rows.Add(100, "Mylie", "Spears");
+            return dtTable;
+        }
+
+        public List<Dictionary<string, object>> GetTableRows(DataTable dtData)
+        {
+            List<Dictionary<string, object>>
+            lstRows = new List<Dictionary<string, object>>();
+            Dictionary<string, object> dictRow = null;
+
+            foreach (DataRow dr in dtData.Rows)
+            {
+                dictRow = new Dictionary<string, object>();
+                foreach (DataColumn col in dtData.Columns)
+                {
+                    dictRow.Add(col.ColumnName, dr[col.ColumnName]);
+                }
+                lstRows.Add(dictRow);
+            }
+            return lstRows;
+        }
+
+        public List<IDictionary> ConvertToDictionary(DataTable dtObject)
+        {
+            var columns = dtObject.Columns.Cast<DataColumn>();
+
+            var dictionaryList = dtObject.AsEnumerable()
+                .Select(dataRow => columns
+                    .Select(column =>
+                        new { Column = column.ColumnName, Value = dataRow[column] })
+                             .ToDictionary(data => data.Column, data => data.Value)).ToList().ToArray();
+
+            return dictionaryList.ToList<IDictionary>();
+        }
+
+        #endregion
+
+        #region ResourceView
+
+        public DataTable GetResources(string skillset = "", string Band = "", string HCBY = "", string selectioncriteria = "")
+        {
+            resetToNull();
+            DataTable dt = null;
+            try
+            {
+                DataSet ds = new DataSet();
+                spName = "SPS_PMO_RESOURCES";
+                if (HCBY.Length > 0 && Band.Length > 0 && selectioncriteria.Length > 0)
+                {
+                    param = new SqlParameter[3];
+                    param[0] = new SqlParameter("@sHCBy", SqlDbType.VarChar);
+                    param[0].Value = HCBY;
+
+                    param[1] = new SqlParameter("@ResBand", SqlDbType.VarChar);
+                    param[1].Value = Band;
+
+                    param[2] = new SqlParameter("@selectioncriteria", SqlDbType.VarChar);
+                    param[2].Value = selectioncriteria;
+                }
+
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, spName, param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0 && skillset != "Y")
+                    dt = ds.Tables[0];
+                else
+                    dt = ds.Tables[0].Select("STATUS IN ('Active', 'Resigned', 'Transferring Out') ").CopyToDataTable();
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return dt;
+        }
+
+        public DataSet GetMetricsCount(string SelectionWise, string HCBY)
+        {
+            resetToNull();
+            DataTable dt = null;
+            DataSet ds = new DataSet();
+            try
+            {
+
+                spName = "SPS_HC_METRICS";
+                param = new SqlParameter[2];
+                param[0] = new SqlParameter("@sHCBy", SqlDbType.VarChar);
+                param[0].Value = HCBY;
+                param[1] = new SqlParameter("@SelectionWise", SqlDbType.VarChar);
+                param[1].Value = SelectionWise;
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, spName, param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    return ds;
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return ds;
+        }
+
+        public DataTable GetIndexes()
+        {
+            resetToNull();
+            DataTable dt = null;
+            try
+            {
+                DataSet ds = new DataSet();
+                spName = "SPS_PMO_INDEX";
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, spName, param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    dt = ds.Tables[0];
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return dt;
+        }
+
+        public DataTable InsertResources(object ResData)
+        {
+            resetToNull();
+            ResourceId obj = (ResourceId)ResData;
+            DataTable dt = null;
+            try
+            {
+                DataSet ds = new DataSet();
+                param = new SqlParameter[25];
+
+                param[0] = new SqlParameter("@RESOURCE_TYPE", SqlDbType.VarChar, 10);
+                param[0].Value = obj.TYPE;
+                param[0].Direction = ParameterDirection.Input;
+
+                param[1] = new SqlParameter("@EMPID", SqlDbType.VarChar, 10);
+                param[1].Value = obj.EMPID;
+                param[1].Direction = ParameterDirection.Input;
+
+                param[2] = new SqlParameter("@RESOURCENAME", SqlDbType.VarChar, 50);
+                param[2].Value = obj.RESNAME;
+                param[2].Direction = ParameterDirection.Input;
+
+                param[3] = new SqlParameter("@SUPERVISOR", SqlDbType.VarChar, 50);
+                param[3].Value = obj.SUPERVISOR;
+                param[3].Direction = ParameterDirection.Input;
+
+                param[4] = new SqlParameter("@SPM", SqlDbType.VarChar, 50);
+                param[4].Value = obj.SPM;
+                param[4].Direction = ParameterDirection.Input;
+
+                param[5] = new SqlParameter("@GPM", SqlDbType.VarChar, 50);
+                param[5].Value = obj.Direct_GPM;
+                param[5].Direction = ParameterDirection.Input;
+
+                param[6] = new SqlParameter("@US_DIR", SqlDbType.VarChar, 50);
+                param[6].Value = obj.DIRECTOR;
+                param[6].Direction = ParameterDirection.Input;
+
+                param[7] = new SqlParameter("@COST_CENTER", SqlDbType.VarChar, 10);
+                param[7].Value = obj.COST_CENTER;
+                param[7].Direction = ParameterDirection.Input;
+
+                param[8] = new SqlParameter("@PROJECT", SqlDbType.VarChar, 50);
+                param[8].Value = obj.PROJECT;
+                param[8].Direction = ParameterDirection.Input;
+
+                param[9] = new SqlParameter("@PRIMARY_SKILL", SqlDbType.VarChar, 50);
+                param[9].Value = obj.SKILL;
+                param[9].Direction = ParameterDirection.Input;
+
+                param[10] = new SqlParameter("@DESIGNATION", SqlDbType.VarChar, 50);
+                param[10].Value = obj.DESIGNATION;
+                param[10].Direction = ParameterDirection.Input;
+
+                param[11] = new SqlParameter("@RESOURCE_BAND", SqlDbType.VarChar, 5);
+                param[11].Value = obj.BAND;
+                param[11].Direction = ParameterDirection.Input;
+
+                param[12] = new SqlParameter("@JOINING_DATE", SqlDbType.DateTime);
+                DateTime? JoinDate;
+                if (!string.IsNullOrEmpty(obj.JOINING_DATE.Trim()))
+                    JoinDate = Convert.ToDateTime(obj.JOINING_DATE);
+                else
+                    JoinDate = null;
+                param[12].Value = JoinDate;
+                param[12].Direction = ParameterDirection.Input;
+
+                param[13] = new SqlParameter("@LOCATION", SqlDbType.VarChar, 50);
+                param[13].Value = obj.LOCATION;
+                param[13].Direction = ParameterDirection.Input;
+
+                param[14] = new SqlParameter("@BUILDING", SqlDbType.VarChar, 50);
+                param[14].Value = obj.BUILDING;
+                param[14].Direction = ParameterDirection.Input;
+
+                param[15] = new SqlParameter("@WKS", SqlDbType.VarChar, 200);
+                param[15].Value = obj.WKS;
+                param[15].Direction = ParameterDirection.Input;
+
+                param[16] = new SqlParameter("@MOBILE", SqlDbType.VarChar, 50);
+                param[16].Value = "";
+                param[16].Direction = ParameterDirection.Input;
+
+                param[17] = new SqlParameter("@VENDOR_COMPANY", SqlDbType.VarChar, 20);
+                param[17].Value = obj.VENDOR_COMPANY;
+                param[17].Direction = ParameterDirection.Input;
+
+                param[18] = new SqlParameter("@STATUS", SqlDbType.VarChar, 50);
+                param[18].Value = obj.STATUS;
+                param[18].Direction = ParameterDirection.Input;
+
+                param[19] = new SqlParameter("@STATUS_CHANGE_DATE", SqlDbType.DateTime);
+                DateTime? StatusChngDate;
+                if (!string.IsNullOrEmpty(obj.STATUS_CHANGE_DATE.Trim()))
+                    StatusChngDate = Convert.ToDateTime(obj.STATUS_CHANGE_DATE);
+                else
+                    StatusChngDate = null;
+                param[19].Value = StatusChngDate;
+                param[19].Direction = ParameterDirection.Input;
+
+                param[20] = new SqlParameter("@BACKFILL", SqlDbType.VarChar, 200);
+                param[20].Value = obj.BACKFILL_COMMENT;
+                param[20].Direction = ParameterDirection.Input;
+
+                param[21] = new SqlParameter("@Resource_Gender", SqlDbType.VarChar, 1);
+                param[21].Value = obj.GENDER;
+                param[21].Direction = ParameterDirection.Input;
+
+                param[22] = new SqlParameter("@UPDATED_BY", SqlDbType.VarChar, 10);
+                param[22].Value = "";
+                param[22].Direction = ParameterDirection.Input;
+
+                param[23] = new SqlParameter("@UPDATED_DT", SqlDbType.DateTime);
+                param[23].Value = System.DateTime.Now;
+                param[23].Direction = ParameterDirection.Input;
+
+                param[24] = new SqlParameter("@NEW_EMP_ID", SqlDbType.VarChar, 10);
+                param[24].Value = "";
+                param[24].Direction = ParameterDirection.Input;
+
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, "SPI_PMO_RESOURCES", param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    return ds.Tables[0];
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return dt;
+        }
+
+        public DataTable UpdateResources(object ResData)
+        {
+            resetToNull();
+            DataTable dt = null;
+            ResourceId obj = (ResourceId)ResData;
+            try
+            {
+                DataSet ds = new DataSet();
+                param = new SqlParameter[26];
+
+                param[0] = new SqlParameter("@RECID", SqlDbType.Int);
+                param[0].Value = obj.RECID;
+                param[0].Direction = ParameterDirection.Input;
+
+                param[1] = new SqlParameter("@RESOURCE_TYPE", SqlDbType.VarChar, 10);
+                param[1].Value = obj.TYPE;
+                param[1].Direction = ParameterDirection.Input;
+
+                param[2] = new SqlParameter("@EMPID", SqlDbType.VarChar, 10);
+                param[2].Value = obj.EMPID;
+                param[2].Direction = ParameterDirection.Input;
+
+                param[3] = new SqlParameter("@RESOURCENAME", SqlDbType.VarChar, 50);
+                param[3].Value = obj.RESNAME;
+                param[3].Direction = ParameterDirection.Input;
+
+                param[4] = new SqlParameter("@SUPERVISOR", SqlDbType.VarChar, 50);
+                param[4].Value = obj.SUPERVISOR;
+                param[4].Direction = ParameterDirection.Input;
+
+                param[5] = new SqlParameter("@SPM", SqlDbType.VarChar, 50);
+                param[5].Value = obj.SPM;
+                param[5].Direction = ParameterDirection.Input;
+
+                param[6] = new SqlParameter("@GPM", SqlDbType.VarChar, 50);
+                param[6].Value = obj.Direct_GPM;
+                param[6].Direction = ParameterDirection.Input;
+
+                param[7] = new SqlParameter("@US_DIR", SqlDbType.VarChar, 50);
+                param[7].Value = obj.DIRECTOR;
+                param[7].Direction = ParameterDirection.Input;
+
+                param[8] = new SqlParameter("@COST_CENTER", SqlDbType.VarChar, 10);
+                param[8].Value = obj.COST_CENTER;
+                param[8].Direction = ParameterDirection.Input;
+
+                param[9] = new SqlParameter("@PROJECT", SqlDbType.VarChar, 50);
+                param[9].Value = obj.PROJECT;
+                param[9].Direction = ParameterDirection.Input;
+
+                param[10] = new SqlParameter("@PRIMARY_SKILL", SqlDbType.VarChar, 50);
+                param[10].Value = obj.SKILL;
+                param[10].Direction = ParameterDirection.Input;
+
+                param[11] = new SqlParameter("@DESIGNATION", SqlDbType.VarChar, 50);
+                param[11].Value = obj.DESIGNATION;
+                param[11].Direction = ParameterDirection.Input;
+
+                param[12] = new SqlParameter("@RESOURCE_BAND", SqlDbType.VarChar, 5);
+                param[12].Value = obj.BAND;
+                param[12].Direction = ParameterDirection.Input;
+
+                param[13] = new SqlParameter("@JOINING_DATE", SqlDbType.DateTime);
+                DateTime? JoinDate;
+                if (!string.IsNullOrEmpty(obj.JOINING_DATE.Trim()))
+                    JoinDate = Convert.ToDateTime(obj.JOINING_DATE);
+                else
+                    JoinDate = null;
+                param[13].Value = JoinDate;
+                param[13].Direction = ParameterDirection.Input;
+
+                param[14] = new SqlParameter("@LOCATION", SqlDbType.VarChar, 50);
+                param[14].Value = obj.LOCATION;
+                param[14].Direction = ParameterDirection.Input;
+
+                param[15] = new SqlParameter("@BUILDING", SqlDbType.VarChar, 50);
+                param[15].Value = obj.BUILDING;
+                param[15].Direction = ParameterDirection.Input;
+
+                param[16] = new SqlParameter("@WKS", SqlDbType.VarChar, 200);
+                param[16].Value = obj.WKS;
+                param[16].Direction = ParameterDirection.Input;
+
+                param[17] = new SqlParameter("@MOBILE", SqlDbType.VarChar, 50);
+                param[17].Value = "";
+                param[17].Direction = ParameterDirection.Input;
+
+                param[18] = new SqlParameter("@VENDOR_COMPANY", SqlDbType.VarChar, 20);
+                param[18].Value = obj.VENDOR_COMPANY;
+                param[18].Direction = ParameterDirection.Input;
+
+                param[19] = new SqlParameter("@STATUS", SqlDbType.VarChar, 50);
+                param[19].Value = obj.STATUS;
+                param[19].Direction = ParameterDirection.Input;
+
+                param[20] = new SqlParameter("@STATUS_CHANGE_DATE", SqlDbType.DateTime);
+                DateTime? StatusChngDate;
+                if (!string.IsNullOrEmpty(obj.STATUS_CHANGE_DATE.Trim()))
+                    StatusChngDate = Convert.ToDateTime(obj.STATUS_CHANGE_DATE);
+                else
+                    StatusChngDate = null;
+                param[20].Value = StatusChngDate;
+                param[20].Direction = ParameterDirection.Input;
+
+                param[21] = new SqlParameter("@BACKFILL", SqlDbType.VarChar, 200);
+                param[21].Value = obj.BACKFILL_COMMENT;
+                param[21].Direction = ParameterDirection.Input;
+
+                param[22] = new SqlParameter("@Resource_Gender", SqlDbType.VarChar, 1);
+                param[22].Value = obj.GENDER;
+                param[22].Direction = ParameterDirection.Input;
+
+                param[23] = new SqlParameter("@UPDATED_BY", SqlDbType.VarChar, 10);
+                param[23].Value = "";
+                param[23].Direction = ParameterDirection.Input;
+
+                param[24] = new SqlParameter("@UPDATED_DT", SqlDbType.DateTime);
+                param[24].Value = System.DateTime.Now;
+                param[24].Direction = ParameterDirection.Input;
+
+                param[25] = new SqlParameter("@NEW_EMP_ID", SqlDbType.VarChar, 10);
+                param[25].Value = "";
+                param[25].Direction = ParameterDirection.Input;
+
+                ds=ExecuteDataset(connectionString, CommandType.StoredProcedure, "SPU_PMO_RESOURCES", param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    dt = ds.Tables[0];
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return dt;
+        }
+
+        public DataTable DeleteResources(int RecId)
+        {
+            resetToNull();
+            DataTable dt = null;
+            try
+            {
+                DataSet ds = new DataSet();
+                spName = "SPD_PMO_RESOURCES";
+                param = new SqlParameter[1];
+
+                param[0] = new SqlParameter("@RECID", SqlDbType.Int);
+                param[0].Value = RecId;
+                param[0].Direction = ParameterDirection.Input;
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, spName, param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    dt = ds.Tables[0];
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return dt;
+        }
+
+        public ResourceData GetResourceList()
+        {
+            //List<ResourceData> ResourceCollection = new List<ResourceData>();
+            DataTable dtResource = GetResources();
+            ResourceData objData = null;
+            List<System.Web.Mvc.SelectListItem> SUPERVISOR = new List<SelectListItem>();
+            SUPERVISOR.Add(new SelectListItem { Text = "MyId1", Value = "MyId1", Selected = true });
+            SUPERVISOR.Add(new SelectListItem { Text = "MyId2", Value = "MyId2" });
+            if (dtResource != null && dtResource.Rows.Count > 0)
+            {
+                objData = new ResourceData();
+                objData.EMPID = "";
+                objData.TYPE = dtResource.AsEnumerable().Select(s => s.Field<string>("TYPE")).Distinct().ToList<string>();
+                objData.eWebNAME = "";
+                objData.SUPERVISOR = dtResource.AsEnumerable().Select(s => s.Field<string>("SUPERVISOR")).Distinct().ToList<string>();
+                objData.SPM = dtResource.AsEnumerable().Select(s => s.Field<string>("SPM")).Distinct().ToList<string>();
+                objData.Direct_GPM = dtResource.AsEnumerable().Select(s => s.Field<string>("Direct_GPM")).Distinct().ToList<string>();
+                objData.DIRECTOR = dtResource.AsEnumerable().Select(s => s.Field<string>("DIRECTOR")).Distinct().ToList<string>();
+                objData.COST_CENTER = "";
+                objData.PROJECT = dtResource.AsEnumerable().Select(s => s.Field<string>("PROJECT")).Distinct().ToList<string>();
+                objData.SKILL = dtResource.AsEnumerable().Select(s => s.Field<string>("SKILL")).Distinct().ToList<string>();
+                objData.DESIGNATION = dtResource.AsEnumerable().Select(s => s.Field<string>("DESIGNATION")).Distinct().ToList<string>();
+                objData.BAND = dtResource.AsEnumerable().Select(s => s.Field<string>("BAND")).Distinct().ToList<string>();
+                objData.JOINING_DATE = "";
+                objData.LOCATION = dtResource.AsEnumerable().Select(s => s.Field<string>("LOCATION")).Distinct().ToList<string>();
+                objData.BUILDING = dtResource.AsEnumerable().Select(s => s.Field<string>("BUILDING")).Distinct().ToList<string>();
+                objData.WKS = "";
+                objData.VENDOR_COMPANY = dtResource.AsEnumerable().Select(s => s.Field<string>("VENDOR_COMPANY")).Distinct().ToList<string>();
+                objData.STATUS = dtResource.AsEnumerable().Select(s => s.Field<string>("STATUS")).Distinct().ToList<string>();
+                objData.STATUS_CHANGE_DATE = "";
+                objData.BACKFILL_COMMENT = "";
+                objData.GENDER = dtResource.AsEnumerable().Select(s => s.Field<string>("GENDER")).Distinct().ToList<string>();
+                //ResourceCollection.Add(objData);
+            }
+            return objData;
+        }
+
+        public ResourceListModel GetSkillSetDetails(ResourceListModel objData)
+        {
+            DataAccessLayer oDAL = new DataAccessLayer();
+            DataTable dtResource = oDAL.GetResources("Y");
+            List<Skillset> SkillCollection = new List<Skillset>();
+            Skillset objskill = null;
+            if (dtResource.Rows.Count > 0)
+            {
+                int total = dtResource.Rows.Count;
+                var skilledData = (from b in dtResource.AsEnumerable()
+                                   group b by b.Field<string>("SKILL") into g
+                                   select new
+                                   {
+                                       PRIMARY_SKILL = g.Key,
+                                       Count = g.Count()
+                                   }).OrderByDescending(a => a.Count).ToList();
+                foreach (var item in skilledData)
+                {
+                    objskill = new Skillset();
+                    objskill.SkillSet = item.PRIMARY_SKILL.ToString();
+                    objskill.Total = item.Count;
+                    objskill.Percentage = Math.Round(item.Count * 100.0 / total, 2);
+                    SkillCollection.Add(objskill);
+                }
+                objData.SkillsetCollection = SkillCollection;
+            }
+
+            return objData;
+        }
+
+        public ResourceListModel GetProjectDetails(ResourceListModel objData)
+        {
+            DataAccessLayer oDAL = new DataAccessLayer();
+            DataTable dtResource = oDAL.GetResources("Y");
+            List<ProjDet> ProjCollection = new List<ProjDet>();
+            ProjDet objProjDet = null;
+            if (dtResource.Rows.Count > 0)
+            {
+                int total = dtResource.Rows.Count;
+                var ProjData = (from b in dtResource.AsEnumerable()
+                                group b by b.Field<string>("PROJECT") into g
+                                select new
+                                {
+                                    PROJECT = g.Key,
+                                    Count = g.Count()
+                                }).OrderByDescending(a => a.Count).ToList();
+                foreach (var item in ProjData)
+                {
+                    objProjDet = new ProjDet();
+                    objProjDet.PROJECT = item.PROJECT.ToString();
+                    objProjDet.Total = item.Count;
+                    objProjDet.Percentage = Math.Round(item.Count * 100.0 / total, 2);
+                    ProjCollection.Add(objProjDet);
+                }
+                objData.ProjectCollection = ProjCollection;
+            }
+            return objData;
+        }
+
+        public DataTable GrandTotalCalculation(DataTable dtHCEmpDetails)
+        {
+            DataRow newrow = dtHCEmpDetails.NewRow();
+            newrow["HC_HEAD"] = "Grand Total";
+            decimal d = 0;
+            decimal totalEmpCHN = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("EMP_CHN"), out d))
+             .Sum(r => d);
+            if (totalEmpCHN > 0)
+            {
+                newrow["EMP_CHN"] = Convert.ToString(totalEmpCHN).Trim();
+            }
+            else
+            {
+                newrow["EMP_CHN"] = "-";
+            }
+            decimal totalEmpHYD = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("EMP_HYD"), out d))
+             .Sum(r => d);
+            if (totalEmpHYD > 0)
+            {
+                newrow["EMP_HYD"] = Convert.ToString(totalEmpHYD).Trim();
+            }
+            else
+            {
+                newrow["EMP_HYD"] = "-";
+            }
+            decimal Emptotal = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Emptotal"), out d))
+                       .Sum(r => d);
+            if (Emptotal > 0)
+            {
+                newrow["Emptotal"] = Convert.ToString(Emptotal).Trim();
+            }
+            else
+            {
+                newrow["Emptotal"] = "-";
+            }
+            decimal VIVM_CHN = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("VIVM_CHN"), out d))
+             .Sum(r => d);
+            if (VIVM_CHN > 0)
+            {
+                newrow["VIVM_CHN"] = Convert.ToString(VIVM_CHN).Trim();
+            }
+            else
+            {
+                newrow["VIVM_CHN"] = "-";
+            }
+            decimal VIVM_HYD = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("VIVM_HYD"), out d))
+                       .Sum(r => d);
+            if (VIVM_HYD > 0)
+            {
+                newrow["VIVM_HYD"] = Convert.ToString(VIVM_HYD).Trim();
+            }
+            else
+            {
+                newrow["VIVM_HYD"] = "-";
+            }
+            decimal VIVM_Total = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("VIVM_Total"), out d))
+             .Sum(r => d);
+            if (VIVM_Total > 0)
+            {
+                newrow["VIVM_Total"] = Convert.ToString(VIVM_Total).Trim();
+            }
+            else
+            {
+                newrow["VIVM_Total"] = "-";
+            }
+            decimal SOW_CHN = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("SOW_CHN"), out d))
+                       .Sum(r => d);
+            if (SOW_CHN > 0)
+            {
+                newrow["SOW_CHN"] = Convert.ToString(SOW_CHN).Trim();
+            }
+            else
+            {
+                newrow["SOW_CHN"] = "-";
+            }
+            decimal SOW_HYD = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("SOW_HYD"), out d))
+             .Sum(r => d);
+            if (SOW_HYD > 0)
+            {
+                newrow["SOW_HYD"] = Convert.ToString(SOW_HYD).Trim();
+            }
+            else
+            {
+                newrow["SOW_HYD"] = "-";
+            }
+            decimal SOW_total = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("SOW_total"), out d))
+                       .Sum(r => d);
+            if (SOW_total > 0)
+            {
+                newrow["SOW_total"] = Convert.ToString(SOW_total).Trim();
+            }
+            else
+            {
+                newrow["SOW_total"] = "-";
+            }
+            decimal TOTAL_HC = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("TOTAL_HC"), out d))
+             .Sum(r => d);
+            if (TOTAL_HC > 0)
+            {
+                newrow["TOTAL_HC"] = Convert.ToString(TOTAL_HC).Trim();
+            }
+            else
+            {
+                newrow["TOTAL_HC"] = "-";
+            }
+            decimal ICS_VIVM = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("ICS_VIVM"), out d))
+                       .Sum(r => d);
+            if (ICS_VIVM > 0)
+            {
+                newrow["ICS_VIVM"] = Convert.ToString(ICS_VIVM).Trim();
+            }
+            else
+            {
+                newrow["ICS_VIVM"] = "-";
+            }
+            decimal ICS_SOW = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("ICS_SOW"), out d))
+             .Sum(r => d);
+            if (ICS_SOW > 0)
+            {
+                newrow["ICS_SOW"] = Convert.ToString(ICS_SOW).Trim();
+            }
+            else
+            {
+                newrow["ICS_SOW"] = "-";
+            }
+            decimal iCS_total = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("iCS_total"), out d))
+                                 .Sum(r => d);
+            if (iCS_total > 0)
+            {
+                newrow["iCS_total"] = Convert.ToString(iCS_total).Trim();
+            }
+            else
+            {
+                newrow["iCS_total"] = "-";
+            }
+            decimal CTS_VIVM = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("CTS_VIVM"), out d))
+             .Sum(r => d);
+            if (CTS_VIVM > 0)
+            {
+                newrow["CTS_VIVM"] = Convert.ToString(CTS_VIVM).Trim();
+            }
+            else
+            {
+                newrow["CTS_VIVM"] = "-";
+            }
+            decimal CTS_SOW = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("CTS_SOW"), out d))
+                       .Sum(r => d);
+            if (CTS_SOW > 0)
+            {
+                newrow["CTS_SOW"] = Convert.ToString(CTS_SOW).Trim();
+            }
+            else
+            {
+                newrow["CTS_SOW"] = "-";
+            }
+            decimal CTS_total = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("CTS_total"), out d))
+             .Sum(r => d);
+            if (CTS_total > 0)
+            {
+                newrow["CTS_total"] = Convert.ToString(CTS_total).Trim();
+            }
+            else
+            {
+                newrow["CTS_total"] = "-";
+            }
+            decimal ACC_VIVM = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("ACC_VIVM"), out d))
+                                 .Sum(r => d);
+            if (ACC_VIVM > 0)
+            {
+                newrow["ACC_VIVM"] = Convert.ToString(ACC_VIVM).Trim();
+            }
+            else
+            {
+                newrow["ACC_VIVM"] = "-";
+            }
+            decimal NEWTGLOBAL_VENDORS = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("NEWTGLOBAL_VENDORS"), out d))
+             .Sum(r => d);
+            if (NEWTGLOBAL_VENDORS > 0)
+            {
+                newrow["NEWTGLOBAL_VENDORS"] = Convert.ToString(NEWTGLOBAL_VENDORS).Trim();
+            }
+            else
+            {
+                newrow["NEWTGLOBAL_VENDORS"] = "-";
+            }
+            decimal USTGLOBAL_VENDORS = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("USTGLOBAL_VENDORS"), out d))
+                                 .Sum(r => d);
+            if (USTGLOBAL_VENDORS > 0)
+            {
+                newrow["USTGLOBAL_VENDORS"] = Convert.ToString(USTGLOBAL_VENDORS).Trim();
+            }
+            else
+            {
+                newrow["USTGLOBAL_VENDORS"] = "-";
+            }
+            decimal Aricent_VENDORS = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Aricent_VENDORS"), out d))
+             .Sum(r => d);
+            if (Aricent_VENDORS > 0)
+            {
+                newrow["Aricent_VENDORS"] = Convert.ToString(Aricent_VENDORS).Trim();
+            }
+            else
+            {
+                newrow["Aricent_VENDORS"] = "-";
+            }
+            decimal CSC_VENDORS = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("CSC_VENDORS"), out d))
+                       .Sum(r => d);
+            if (CSC_VENDORS > 0)
+            {
+                newrow["CSC_VENDORS"] = Convert.ToString(CSC_VENDORS).Trim();
+            }
+            else
+            {
+                newrow["CSC_VENDORS"] = "-";
+            }
+            decimal TCS_VENDORS = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("TCS_VENDORS"), out d))
+             .Sum(r => d);
+            if (TCS_VENDORS > 0)
+            {
+                newrow["TCS_VENDORS"] = Convert.ToString(TCS_VENDORS).Trim();
+            }
+            else
+            {
+                newrow["TCS_VENDORS"] = "-";
+            }
+
+            decimal TECHM_VENDORS = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("TECHM_VENDORS"), out d))
+                                 .Sum(r => d);
+            if (TECHM_VENDORS > 0)
+            {
+                newrow["TECHM_VENDORS"] = Convert.ToString(TECHM_VENDORS).Trim();
+            }
+            else
+            {
+                newrow["TECHM_VENDORS"] = "-";
+            }
+            decimal TOTAL_TM = dtHCEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("TOTAL_TM"), out d))
+             .Sum(r => d);
+            if (TOTAL_TM > 0)
+            {
+                newrow["TOTAL_TM"] = Convert.ToString(TOTAL_TM).Trim();
+            }
+            else
+            {
+                newrow["TOTAL_TM"] = "-";
+            }
+            dtHCEmpDetails.Rows.Add(newrow);
+            return dtHCEmpDetails;
+        }
+
+        public DataTable GetBandwiseDetails(DataTable dtHCMetrics, DataTable dtBandEmpDetails)
+        {
+            foreach (DataRow row in dtHCMetrics.Rows)
+            {
+                DataRow _row = dtBandEmpDetails.NewRow();
+                _row["HC_Head"] = Convert.ToString(row["HC_Head"]).Trim();
+                _row["Band1"] = (Convert.ToString(row["Band1"]).Trim() == "0" ? "" : Convert.ToString(row["Band1"]).Trim());
+                _row["Band2"] = (Convert.ToString(row["Band2"]).Trim() == "0" ? "" : Convert.ToString(row["Band2"]).Trim());
+                _row["Band3"] = (Convert.ToString(row["Band3"]).Trim() == "0" ? "" : Convert.ToString(row["Band3"]).Trim());
+                _row["Band4"] = (Convert.ToString(row["Band4"]).Trim() == "0" ? "" : Convert.ToString(row["Band4"]).Trim());
+                _row["Band5_CSLT"] = (Convert.ToString(row["Band5_CSLT"]).Trim() == "0" ? "" : Convert.ToString(row["Band5_CSLT"]).Trim());
+                _row["Band5_ARCH"] = (Convert.ToString(row["Band5_ARCH"]).Trim() == "0" ? "" : Convert.ToString(row["Band5_ARCH"]).Trim());
+                _row["Band5_TLPL"] = (Convert.ToString(row["Band5_TLPL"]).Trim() == "0" ? "" : Convert.ToString(row["Band5_TLPL"]).Trim());
+                _row["Band6"] = (Convert.ToString(row["Band6"]).Trim() == "0" ? "" : Convert.ToString(row["Band6"]).Trim());
+                _row["Band7"] = (Convert.ToString(row["Band7"]).Trim() == "0" ? "" : Convert.ToString(row["Band7"]).Trim());
+                _row["Band8"] = (Convert.ToString(row["Band8"]).Trim() == "0" ? "" : Convert.ToString(row["Band8"]).Trim());
+
+                _row["Total"] = Convert.ToInt16(row["Band1"]) + Convert.ToInt16(row["Band2"]) + Convert.ToInt16(row["Band3"]) + Convert.ToInt16(row["Band4"]) +
+                     Convert.ToInt16(row["Band5_CSLT"]) + Convert.ToInt16(row["Band5_ARCH"]) + Convert.ToInt16(row["Band5_TLPL"]) + Convert.ToInt16(row["Band6"]) +
+                 +Convert.ToInt16(row["Band7"]) + Convert.ToInt16(row["Band8"]);
+                dtBandEmpDetails.Rows.Add(_row);
+            }
+            GrandTotalCalculationBandwise(dtBandEmpDetails);
+
+            return dtBandEmpDetails;
+        }
+
+        public DataTable GrandTotalCalculationBandwise(DataTable dtBandEmpDetails)
+        {
+            DataRow newrow = dtBandEmpDetails.NewRow();
+            newrow["HC_Head"] = "Grand Total";
+            decimal d = 0;
+            decimal totalEmpBand1 = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Band1"), out d))
+             .Sum(r => d);
+            if (totalEmpBand1 > 0)
+            {
+                newrow["Band1"] = Convert.ToString(totalEmpBand1).Trim();
+            }
+            else
+            {
+                newrow["Band1"] = "0";
+            }
+            decimal totalEmpBand2 = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Band2"), out d))
+             .Sum(r => d);
+            if (totalEmpBand2 > 0)
+            {
+                newrow["Band2"] = Convert.ToString(totalEmpBand2).Trim();
+            }
+            else
+            {
+                newrow["Band2"] = "0";
+            }
+            decimal EmptotalBand3 = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Band3"), out d))
+                       .Sum(r => d);
+            if (EmptotalBand3 > 0)
+            {
+                newrow["Band3"] = Convert.ToString(EmptotalBand3).Trim();
+            }
+            else
+            {
+                newrow["Band3"] = "0";
+            }
+            decimal totBand4 = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Band4"), out d))
+             .Sum(r => d);
+            if (totBand4 > 0)
+            {
+                newrow["Band4"] = Convert.ToString(totBand4).Trim();
+            }
+            else
+            {
+                newrow["Band4"] = "0";
+            }
+
+            decimal TotalBand5_CSLT = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Band5_CSLT"), out d))
+             .Sum(r => d);
+            if (TotalBand5_CSLT > 0)
+            {
+                newrow["Band5_CSLT"] = Convert.ToString(TotalBand5_CSLT).Trim();
+            }
+            else
+            {
+                newrow["Band5_CSLT"] = "0";
+            }
+            decimal totBand5_ARCH = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Band5_ARCH"), out d))
+                       .Sum(r => d);
+            if (totBand5_ARCH > 0)
+            {
+                newrow["Band5_ARCH"] = Convert.ToString(totBand5_ARCH).Trim();
+            }
+            else
+            {
+                newrow["Band5_ARCH"] = "0";
+            }
+            decimal totBand5_TLPL = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Band5_TLPL"), out d))
+             .Sum(r => d);
+            if (totBand5_TLPL > 0)
+            {
+                newrow["Band5_TLPL"] = Convert.ToString(totBand5_TLPL).Trim();
+            }
+            else
+            {
+                newrow["Band5_TLPL"] = "0";
+            }
+            decimal totBand6 = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Band6"), out d))
+                       .Sum(r => d);
+            if (totBand6 > 0)
+            {
+                newrow["Band6"] = Convert.ToString(totBand6).Trim();
+            }
+            else
+            {
+                newrow["Band6"] = "0";
+            }
+            decimal totBand7 = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Band7"), out d))
+             .Sum(r => d);
+            if (totBand7 > 0)
+            {
+                newrow["Band7"] = Convert.ToString(totBand7).Trim();
+            }
+            else
+            {
+                newrow["Band7"] = "0";
+            }
+            decimal totBand8 = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Band8"), out d))
+                       .Sum(r => d);
+            if (totBand8 > 0)
+            {
+                newrow["Band8"] = Convert.ToString(totBand8).Trim();
+            }
+            else
+            {
+                newrow["Band8"] = "0";
+            }
+            decimal GrandTot = dtBandEmpDetails.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Total"), out d))
+                      .Sum(r => d);
+            if (GrandTot > 0)
+            {
+                newrow["Total"] = Convert.ToString(GrandTot).Trim();
+            }
+            else
+            {
+                newrow["Total"] = "0";
+            }
+
+            dtBandEmpDetails.Rows.Add(newrow);
+            return dtBandEmpDetails;
+        }
+
+        public DataTable GetOverAllDetails(DataTable dtoveralldet, DataTable dtoverall)
+        {
+            foreach (DataRow row in dtoveralldet.Rows)
+            {
+                DataRow _row = dtoverall.NewRow();
+                _row["HC_Head"] = Convert.ToString(row["HC_Head"]).Trim();
+                _row["EMP"] = (Convert.ToString(row["EMP"]).Trim() == "0" ? "" : Convert.ToString(row["EMP"]).Trim());
+                _row["VIVM"] = (Convert.ToString(row["VIVM"]).Trim() == "0" ? "" : Convert.ToString(row["VIVM"]).Trim());
+                _row["SOW"] = (Convert.ToString(row["SOW"]).Trim() == "0" ? "" : Convert.ToString(row["SOW"]).Trim());
+                _row["Total"] = Convert.ToInt16(row["EMP"]) + Convert.ToInt16(row["VIVM"]) + Convert.ToInt16(row["SOW"]);
+                dtoverall.Rows.Add(_row);
+
+            }
+            GrandTotalCalculationOverAllBandwise(dtoverall);
+
+            return dtoverall;
+        }
+
+        public DataTable GrandTotalCalculationOverAllBandwise(DataTable dtoverall)
+        {
+            DataRow newrow = dtoverall.NewRow();
+            newrow["HC_Head"] = "Grand Total";
+            decimal d = 0;
+            decimal totalEmp = dtoverall.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("EMP"), out d))
+             .Sum(r => d);
+            if (totalEmp > 0)
+            {
+                newrow["EMP"] = Convert.ToString(totalEmp).Trim();
+            }
+            else
+            {
+                newrow["EMP"] = "0";
+            }
+            decimal totalVIVM = dtoverall.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("VIVM"), out d))
+             .Sum(r => d);
+            if (totalVIVM > 0)
+            {
+                newrow["VIVM"] = Convert.ToString(totalVIVM).Trim();
+            }
+            else
+            {
+                newrow["VIVM"] = "0";
+            }
+            decimal totSOW = dtoverall.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("SOW"), out d))
+                       .Sum(r => d);
+            if (totSOW > 0)
+            {
+                newrow["SOW"] = Convert.ToString(totSOW).Trim();
+            }
+            else
+            {
+                newrow["SOW"] = "0";
+            }
+            decimal Total = dtoverall.AsEnumerable().Where(r => decimal.TryParse(r.Field<string>("Total"), out d))
+             .Sum(r => d);
+            if (Total > 0)
+            {
+                newrow["Total"] = Convert.ToString(Total).Trim();
+            }
+            else
+            {
+                newrow["Total"] = "0";
+            }
+
+            dtoverall.Rows.Add(newrow);
+            return dtoverall;
+
+        }
+
+        #endregion
+
+        #region CapacityPlanning
+
+        public DataSet GetCapacityPlans()
+        {
+            resetToNull();
+            DataSet ds = new DataSet();
+            try
+            {
+                spName = "SPS_PMO_CAPACITY_PLANNING";
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, spName);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    return ds;
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return ds;
+        }
+
+        public DataSet  InsertCapacityPlan(object CapData)
+        {
+            resetToNull();
+            CapacityPlan obj = (CapacityPlan)CapData;
+            DataSet ds = new DataSet();
+            try
+            {
+                
+
+                param = new SqlParameter[18];
+
+                param[0] = new SqlParameter("@CP_MONTH", SqlDbType.VarChar, 50);
+                param[0].Value = obj.MONTH;
+                param[0].Direction = ParameterDirection.Input;
+
+                param[1] = new SqlParameter("@CP_DIR", SqlDbType.VarChar, 50);
+                param[1].Value = obj.DIR;
+                param[1].Direction = ParameterDirection.Input;
+
+                param[2] = new SqlParameter("@CP_SPM", SqlDbType.VarChar, 50);
+                param[2].Value = obj.SPM;
+                param[2].Direction = ParameterDirection.Input;
+
+                param[3] = new SqlParameter("@CP_SKILL", SqlDbType.VarChar, 50);
+                param[3].Value = obj.SKILL;
+                param[3].Direction = ParameterDirection.Input;
+
+                param[4] = new SqlParameter("@CP_AVAILABLE", SqlDbType.Decimal);
+                param[4].Value = obj.Avail;
+                param[4].Direction = ParameterDirection.Input;
+
+                param[5] = new SqlParameter("@CP_ASK", SqlDbType.Decimal);
+                param[5].Value = obj.ASK;
+                param[5].Direction = ParameterDirection.Input;
+
+                param[6] = new SqlParameter("@CP_WR", SqlDbType.VarChar, 50);
+                param[6].Value = obj.WR;
+                param[6].Direction = ParameterDirection.Input;
+
+                param[7] = new SqlParameter("@CP_SPMID ", SqlDbType.VarChar, 50);
+                param[7].Value = obj.SPMID;
+                param[7].Direction = ParameterDirection.Input;
+
+                param[8] = new SqlParameter("@CP_COST_TRACKER", SqlDbType.VarChar, 50);
+                param[8].Value = obj.COST_TRACKER;
+                param[8].Direction = ParameterDirection.Input;
+
+                param[9] = new SqlParameter("@CP_PROGRAM", SqlDbType.VarChar, 50);
+                param[9].Value = obj.PROGRAM;
+                param[9].Direction = ParameterDirection.Input;
+
+                param[10] = new SqlParameter("@CP_PROJECT", SqlDbType.VarChar, 50);
+                param[10].Value = obj.PROJECT;
+                param[10].Direction = ParameterDirection.Input;
+
+                param[11] = new SqlParameter("@CP_LOE", SqlDbType.Int);
+                param[11].Value = obj.LOE;
+                param[11].Direction = ParameterDirection.Input;
+
+                param[12] = new SqlParameter("@CP_PRIORITY", SqlDbType.SmallInt);
+                param[12].Value = obj.PRIORITY;
+                param[12].Direction = ParameterDirection.Input;
+
+                param[13] = new SqlParameter("@CP_COMMENT", SqlDbType.VarChar, 200);
+                param[13].Value = obj.COMMENT;
+                param[13].Direction = ParameterDirection.Input;
+
+                param[14] = new SqlParameter("@CP_RELEASE_DATE", SqlDbType.Date);
+                param[14].Value = obj.RELEASE_DATE;
+                param[14].Direction = ParameterDirection.Input;
+
+                param[15] = new SqlParameter("@CP_SUPERVISOR", SqlDbType.VarChar, 50);
+                param[15].Value = obj.SUPERVISOR;
+                param[15].Direction = ParameterDirection.Input;
+
+                param[16] = new SqlParameter("@Updated_by", SqlDbType.VarChar, 50);
+                param[16].Value = obj.UpdatedBy;
+                param[16].Direction = ParameterDirection.Input;
+
+                param[17] = new SqlParameter("@Updated_Dt ", SqlDbType.DateTime);
+                param[17].Value = obj.UpdatedDate;
+                param[17].Direction = ParameterDirection.Input;
+
+                ds=ExecuteDataset(connectionString, CommandType.StoredProcedure, "SPI_PMO_CAPACITY_PLANNING", param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    return ds;
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return ds;
+        }
+
+        public DataSet UpdateCapacityPlans(object CapData)
+        {
+            resetToNull();
+            CapacityPlan obj = (CapacityPlan)CapData;
+            DataSet ds = new DataSet();
+            try
+            {
+               
+
+                param = new SqlParameter[19];
+
+                param[0] = new SqlParameter("@CP_ID", SqlDbType.Int);
+                param[0].Value = obj.CPID;
+                param[0].Direction = ParameterDirection.Input;
+
+                param[1] = new SqlParameter("@CP_MONTH", SqlDbType.VarChar, 50);
+                param[1].Value = obj.MONTH;
+                param[1].Direction = ParameterDirection.Input;
+
+                param[2] = new SqlParameter("@CP_DIR", SqlDbType.VarChar, 50);
+                param[2].Value = obj.DIR;
+                param[2].Direction = ParameterDirection.Input;
+
+                param[3] = new SqlParameter("@CP_SPM", SqlDbType.VarChar, 50);
+                param[3].Value = obj.SPM;
+                param[3].Direction = ParameterDirection.Input;
+
+                param[4] = new SqlParameter("@CP_SKILL", SqlDbType.VarChar, 50);
+                param[4].Value = obj.SKILL;
+                param[4].Direction = ParameterDirection.Input;
+
+                param[5] = new SqlParameter("@CP_AVAILABLE", SqlDbType.Decimal);
+                param[5].Value = obj.Avail;
+                param[5].Direction = ParameterDirection.Input;
+
+                param[6] = new SqlParameter("@CP_ASK", SqlDbType.Decimal);
+                param[6].Value = obj.ASK;
+                param[6].Direction = ParameterDirection.Input;
+
+                param[7] = new SqlParameter("@CP_WR", SqlDbType.VarChar, 50);
+                param[7].Value = obj.WR;
+                param[7].Direction = ParameterDirection.Input;
+
+                param[8] = new SqlParameter("@CP_SPMID ", SqlDbType.VarChar, 50);
+                param[8].Value = obj.SPMID;
+                param[8].Direction = ParameterDirection.Input;
+
+                param[9] = new SqlParameter("@CP_COST_TRACKER", SqlDbType.VarChar, 50);
+                param[9].Value = obj.COST_TRACKER;
+                param[9].Direction = ParameterDirection.Input;
+
+                param[10] = new SqlParameter("@CP_PROGRAM", SqlDbType.VarChar, 50);
+                param[10].Value = obj.PROGRAM;
+                param[10].Direction = ParameterDirection.Input;
+
+                param[11] = new SqlParameter("@CP_PROJECT", SqlDbType.VarChar, 50);
+                param[11].Value = obj.PROJECT;
+                param[11].Direction = ParameterDirection.Input;
+
+                param[12] = new SqlParameter("@CP_LOE", SqlDbType.Int);
+                param[12].Value = obj.LOE;
+                param[12].Direction = ParameterDirection.Input;
+
+                param[13] = new SqlParameter("@CP_PRIORITY", SqlDbType.SmallInt);
+                param[13].Value = obj.PRIORITY;
+                param[13].Direction = ParameterDirection.Input;
+
+                param[14] = new SqlParameter("@CP_COMMENT", SqlDbType.VarChar, 200);
+                param[14].Value = obj.COMMENT;
+                param[14].Direction = ParameterDirection.Input;
+
+                param[15] = new SqlParameter("@CP_RELEASE_DATE", SqlDbType.Date);
+                param[15].Value = obj.RELEASE_DATE;
+                param[15].Direction = ParameterDirection.Input;
+
+                param[16] = new SqlParameter("@CP_SUPERVISOR", SqlDbType.VarChar, 50);
+                param[16].Value = obj.SUPERVISOR;
+                param[16].Direction = ParameterDirection.Input;
+
+                param[17] = new SqlParameter("@Updated_by", SqlDbType.VarChar, 50);
+                param[17].Value = obj.UpdatedBy;
+                param[17].Direction = ParameterDirection.Input;
+
+                param[18] = new SqlParameter("@Updated_Dt ", SqlDbType.DateTime);
+                param[18].Value = obj.UpdatedDate;
+                param[18].Direction = ParameterDirection.Input;
+
+                ds=ExecuteDataset(connectionString, CommandType.StoredProcedure, "SPU_PMO_CAPACITY_PLANNING", param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    return ds;
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return ds;
+        }
+
+        public DataSet DeleteCapacityPlans(int CPId)
+        {
+            resetToNull();
+            DataSet ds = new DataSet();
+            try
+            {
+                spName = "SPD_PMO_CAPACITY_PLANNING";
+                param = new SqlParameter[1];
+
+                param[0] = new SqlParameter("@CP_ID", SqlDbType.Int);
+                param[0].Value = CPId;
+                param[0].Direction = ParameterDirection.Input;
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, spName, param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    return ds;
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return ds;
+        }
+
+        public DataSet GetCapacityPlanningetails(string selectedMonth, string HCBY)
+        {
+            resetToNull();
+            DataSet ds = new DataSet();
+            try
+            {
+                spName = "SPS_CapacityPlanningHeadwise";
+                param = new SqlParameter[2];
+
+                param[0] = new SqlParameter("@sHCBy", SqlDbType.VarChar);
+                param[0].Value = HCBY;
+
+                param[1] = new SqlParameter("@selectedMonth", SqlDbType.VarChar);
+                param[1].Value = selectedMonth;
+
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, spName, param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    return ds;
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return ds;
+        }
+        public DataSet ResourcePlanforMonthactionDetails(string selectedMonth)
+        {
+            resetToNull();
+            DataTable dt = null;
+            DataSet ds = new DataSet();
+            try
+            {
+
+                spName = "SPS_ResourcePlaningMonth";
+                param = new SqlParameter[1];
+                param[0] = new SqlParameter("@selectedMonth", SqlDbType.VarChar);
+                param[0].Value = selectedMonth;
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, spName, param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    return ds;
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return ds;
+        }
+        public DataSet GetAskResourceDetails(string selectedMonth, string HCBY, string skill)
+        {
+            resetToNull();
+            DataSet ds = new DataSet();
+            try
+            {
+                spName = "SPS_CapacityPlanningAskResourseDetails";
+                param = new SqlParameter[3];
+
+                param[0] = new SqlParameter("@sHCBy", SqlDbType.VarChar);
+                param[0].Value = HCBY;
+
+                param[1] = new SqlParameter("@selectedMonth", SqlDbType.VarChar);
+                param[1].Value = selectedMonth;
+
+                param[2] = new SqlParameter("@skill", SqlDbType.VarChar);
+                param[2].Value = skill;
+
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, spName, param);
+                if (ds != null && ds.Tables != null && ds.Tables[0].Rows.Count > 0)
+                    return ds;
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return ds;
+        }
+
+        #endregion
+
+        #region ResourcePlanning
+
+        public DataSet GetResPlans(string ReportType = "", string SelMonth = "", string Supervisor = "", string RecId = "")
+        {
+            resetToNull();
+            DataSet ds = new DataSet();
+            try
+            {
+                param = new SqlParameter[4];
+                param[0] = new SqlParameter("@RepType", SqlDbType.VarChar, 15);
+                param[0].Value = ReportType;
+                param[1] = new SqlParameter("@SelectedMonth", SqlDbType.VarChar, 50);
+                param[1].Value = SelMonth;
+                param[2] = new SqlParameter("@SUPERVISOR", SqlDbType.VarChar, 50);
+                param[2].Value = Supervisor;
+                param[3] = new SqlParameter("@RECID", SqlDbType.Int);
+                param[3].Value = string.IsNullOrEmpty(RecId) ? 0 : Convert.ToInt32(RecId);
+                ds = ExecuteDataset(connectionString, CommandType.StoredProcedure, "SPS_PMO_RESOURCEPLANS", param);
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return ds;
+        }
+
+        public void DeleteEstimations(int RowId, int RecId, int CpyRECID, string EstMonth, string MonthFlag, string ResName)
+        {
+            resetToNull();
+            try
+            {
+                spName = "SPD_PMO_ESTIMATIONS";
+                param = new SqlParameter[6];
+
+                param[0] = new SqlParameter("@ROWID", SqlDbType.Int);
+                param[0].Value = RowId;
+                param[0].Direction = ParameterDirection.Input;
+
+                param[1] = new SqlParameter("@RECID", SqlDbType.Int);
+                param[1].Value = RecId;
+                param[1].Direction = ParameterDirection.Input;
+
+                param[2] = new SqlParameter("@CPYRECID", SqlDbType.Int);
+                param[2].Value = CpyRECID;
+                param[2].Direction = ParameterDirection.Input;
+
+                param[3] = new SqlParameter("@ESTMONTH", SqlDbType.VarChar, 50);
+                param[3].Value = EstMonth;
+                param[3].Direction = ParameterDirection.Input;
+
+                param[4] = new SqlParameter("@RESNAME", SqlDbType.VarChar, 50);
+                param[4].Value = ResName;
+                param[4].Direction = ParameterDirection.Input;
+
+                param[5] = new SqlParameter("@MONTHFLAG", SqlDbType.Char, 1);
+                param[5].Value = MonthFlag;
+                param[5].Direction = ParameterDirection.Input;
+
+                ExecuteDataset(connectionString, CommandType.StoredProcedure, spName, param);
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+        }
+
+        public void UpdateEstimations(object EstData)
+        {
+            resetToNull();
+            Estimation obj = (Estimation)EstData;
+            try
+            {
+                DataSet ds = new DataSet();
+
+                param = new SqlParameter[17];
+
+                param[0] = new SqlParameter("@cvROW_ID", SqlDbType.Int);
+                param[0].Value = obj.ROW_ID;
+                param[0].Direction = ParameterDirection.Input;
+
+                param[1] = new SqlParameter("@cvEST_MONTH", SqlDbType.VarChar, 50);
+                param[1].Value = obj.EST_MONTH;
+                param[1].Direction = ParameterDirection.Input;
+
+                param[2] = new SqlParameter("@iRECID", SqlDbType.Int);
+                param[2].Value = obj.RECID;
+                param[2].Direction = ParameterDirection.Input;
+
+                param[3] = new SqlParameter("@cvRESOURCENAME", SqlDbType.VarChar, 50);
+                param[3].Value = obj.RESOURCENAME;
+                param[3].Direction = ParameterDirection.Input;
+
+                param[4] = new SqlParameter("@cvSPMID", SqlDbType.VarChar, 50);
+                param[4].Value = obj.SPMID;
+                param[4].Direction = ParameterDirection.Input;
+
+                param[5] = new SqlParameter("@cvCOST_TRACKER", SqlDbType.VarChar, 50);
+                param[5].Value = obj.COST_TRACKER;
+                param[5].Direction = ParameterDirection.Input;
+
+                param[6] = new SqlParameter("@cvPROGRAM", SqlDbType.VarChar, 150);
+                param[6].Value = obj.PROGRAM;
+                param[6].Direction = ParameterDirection.Input;
+
+                param[7] = new SqlParameter("@cvPROJECT", SqlDbType.VarChar, 200);
+                param[7].Value = obj.PROJECT;
+                param[7].Direction = ParameterDirection.Input;
+
+                param[8] = new SqlParameter("@cvWORK_ACTIVITY", SqlDbType.VarChar, 150);
+                param[8].Value = obj.WORK_ACTIVITY;
+                param[8].Direction = ParameterDirection.Input;
+
+                param[9] = new SqlParameter("@cvIR_CR", SqlDbType.VarChar, 50);
+                param[9].Value = obj.IR_CR;
+                param[9].Direction = ParameterDirection.Input;
+
+                param[10] = new SqlParameter("@cvWORK_ACTIVITY_DESC", SqlDbType.VarChar, 150);
+                param[10].Value = obj.WORK_ACTIVITY_DESC;
+                param[10].Direction = ParameterDirection.Input;
+
+                param[11] = new SqlParameter("@iEST_HRS", SqlDbType.Int);
+                param[11].Value = obj.EST_HRS;
+                param[11].Direction = ParameterDirection.Input;
+
+                param[12] = new SqlParameter("@dtSTART_DATE", SqlDbType.DateTime);
+                param[12].Value = obj.START_DATE;
+                param[12].Direction = ParameterDirection.Input;
+
+                param[13] = new SqlParameter("@dtEND_DATE", SqlDbType.DateTime);
+                param[13].Value = obj.END_DATE;
+                param[13].Direction = ParameterDirection.Input;
+
+                param[14] = new SqlParameter("@iIS_ACTIVE", SqlDbType.Int);
+                param[14].Value = obj.IS_ACTIVE;
+                param[14].Direction = ParameterDirection.Input;
+
+                param[15] = new SqlParameter("@cvUPDATED_BY", SqlDbType.VarChar, 50);
+                param[15].Value = obj.UPDATED_BY;
+                param[15].Direction = ParameterDirection.Input;
+
+                param[16] = new SqlParameter("@dtUPDATED_DT", SqlDbType.DateTime);
+                param[16].Value = obj.UPDATED_DT;
+                param[16].Direction = ParameterDirection.Input;
+
+                ExecuteDataset(connectionString, CommandType.StoredProcedure, "SPU_PMO_ESTIMATIONS", param);
+
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+        }
+
+        public void PerformBulkCopy(DataTable dtEstimations)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    using (SqlBulkCopy bulkCopy = new SqlBulkCopy(conn))
+                    {
+                        bulkCopy.DestinationTableName = "PMO_ESTIMATIONS";
+                        if ((conn.State == ConnectionState.Open))
+                        {
+                            // bulkCopy.ColumnMappings.Add("ROW_ID", "ROW_ID");
+                            bulkCopy.ColumnMappings.Add("EST_MONTH", "EST_MONTH");
+                            bulkCopy.ColumnMappings.Add("RECID", "RECID");
+                            bulkCopy.ColumnMappings.Add("RESOURCENAME", "RESOURCENAME");
+                            bulkCopy.ColumnMappings.Add("SPMID", "SPMID");
+                            bulkCopy.ColumnMappings.Add("COST_TRACKER", "COST_TRACKER");
+                            bulkCopy.ColumnMappings.Add("PROGRAM", "PROGRAM");
+                            bulkCopy.ColumnMappings.Add("PROJECT", "PROJECT");
+                            bulkCopy.ColumnMappings.Add("WORK_ACTIVITY", "WORK_ACTIVITY");
+                            bulkCopy.ColumnMappings.Add("IR_CR", "IR_CR");
+                            bulkCopy.ColumnMappings.Add("WORK_ACTIVITY_DESC", "WORK_ACTIVITY_DESC");
+                            bulkCopy.ColumnMappings.Add("EST_HRS", "EST_HRS");
+                            bulkCopy.ColumnMappings.Add("START_DATE", "START_DATE");
+                            bulkCopy.ColumnMappings.Add("END_DATE", "END_DATE");
+                            bulkCopy.ColumnMappings.Add("IS_ACTIVE", "IS_ACTIVE");
+                            bulkCopy.ColumnMappings.Add("UPDATED_BY", "UPDATED_BY");
+                            bulkCopy.ColumnMappings.Add("UPDATED_DT", "UPDATED_DT");
+                            bulkCopy.WriteToServer(dtEstimations);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+        }
+        #endregion
+
+        #region DBMethods
+        DataSet GetDataSet(string sqlCommand, string connectionString)
+        {
+            DataSet ds = null;
+            try
+            {
+                ds = new DataSet();
+                using (SqlCommand cmd = new SqlCommand(
+                    sqlCommand, new SqlConnection(connectionString)))
+                {
+                    cmd.Connection.Open();
+                    DataTable table = new DataTable();
+                    table.Load(cmd.ExecuteReader());
+                    ds.Tables.Add(table);
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+            }
+            return ds;
+        }
+
+        public DataSet ExecuteDataset(string connectionString, CommandType commandType, string commandText, params SqlParameter[] commandParameters)
+        {
+           
+            if (connectionString == null || connectionString.Length == 0) throw new ArgumentNullException("connectionString");
+
+            // Create & open a SqlConnection, and dispose of it after we are done
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                // Commented the connection open, because we are opeing the connection again in 
+                // PrepareCommand method.
+                //connection.Open();
+
+                // Call the overload that takes a connection in place of the connection string
+                 return ExecuteDataset(connection, commandType, commandText, commandParameters);
+                 
+            }
+        }
+
+        public DataSet ExecuteDataset(SqlConnection connection, CommandType commandType, string commandText, params SqlParameter[] commandParameters)
+        {
+            if (connection == null) throw new ArgumentNullException("connection");
+
+            // Create a command and prepare it for execution
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandTimeout = 120;
+            bool mustCloseConnection = false;
+            PrepareCommand(cmd, connection, (SqlTransaction)null, commandType, commandText, commandParameters, out mustCloseConnection);
+
+            // Create the DataAdapter & DataSet
+            using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+            {
+
+                DataSet ds = new DataSet();
+
+                // Fill the DataSet using default values for DataTable names, etc
+                da.Fill(ds);
+
+                // Detach the SqlParameters from the command object, so they can be used again
+                cmd.Parameters.Clear();
+
+                if (mustCloseConnection)
+                    connection.Close();
+
+                // Return the dataset
+                return ds;
+            }
+        }
+
+        private void PrepareCommand(SqlCommand command, SqlConnection connection, SqlTransaction transaction, CommandType commandType, string commandText, SqlParameter[] commandParameters, out bool mustCloseConnection)
+        {
+            if (command == null) throw new ArgumentNullException("command");
+            if (commandText == null || commandText.Length == 0) throw new ArgumentNullException("commandText");
+
+            // If the provided connection is not open, we will open it
+            if (connection.State != ConnectionState.Open)
+            {
+                mustCloseConnection = true;
+                connection.Open();
+            }
+            else
+            {
+                mustCloseConnection = false;
+            }
+
+            // Associate the connection with the command
+            command.Connection = connection;
+
+            // Set the command text (stored procedure name or SQL statement)
+            command.CommandText = commandText;
+
+            // If we were provided a transaction, assign it
+            if (transaction != null)
+            {
+                if (transaction.Connection == null) throw new ArgumentException("The transaction was rollbacked or commited, please provide an open transaction.", "transaction");
+                command.Transaction = transaction;
+            }
+
+            // Set the command type
+            command.CommandType = commandType;
+           // command.CommandType=CommandType.StoredProcedure;
+            // Attach the command parameters if they are provided
+            if (commandParameters != null)
+            {
+                AttachParameters(command, commandParameters);
+            }
+            return;
+        }
+
+        private static void AttachParameters(SqlCommand command, SqlParameter[] commandParameters)
+        {
+            if (command == null) throw new ArgumentNullException("command");
+            if (commandParameters != null)
+            {
+                foreach (SqlParameter p in commandParameters)
+                {
+                    if (p != null)
+                    {
+                        // Check for derived output value with no value assigned
+                        if ((p.Direction == ParameterDirection.InputOutput ||
+                            p.Direction == ParameterDirection.Input) &&
+                            (p.Value == null))
+                        {
+                            p.Value = DBNull.Value;
+                        }
+                        command.Parameters.Add(p);
+                    }
+                }
+            }
+        }
+        #endregion
+    }
+
+    public class ResourceListModel
+    {
+        public List<ResourceData> ResourceCollection { get; set; }
+        public ResourceData ResourceListDetail { get; set; }
+        public ResourceId ResourceIdData { get; set; }
+        public DataTable dtHCEmpDetails = new DataTable();
+        public DataTable dtoverall = new DataTable();
+        public DataTable dtAskRes = new DataTable();
+        public DataTable dtBandEmpDetails = new DataTable();
+        public DataTable dtSkillEmpDetails = new DataTable();
+        public List<Skillset> SkillsetCollection { get; set; }
+        public List<SkillwiseDetails> SkillwiseDetCollection { get; set; }
+        public List<ProjectwiseDetails> ProjectwiseDetCollection { get; set; }
+        public List<ProjDet> ProjectCollection { get; set; }
+        public List<CapacityPlanDet> CapacityPlanDetCollection { get; set; }
+        public List<string> HeadList = new List<string>();
+        public List<string> skilllist = new List<string>();
+        public List<GrandTotalCapacityDet> GrandTotalCapacityCollection { get; set; }
+    }
+
+    public class ResourceData
+    {
+        public string EMPID { get; set; }
+        public List<string> TYPE { get; set; }
+        public string eWebNAME { get; set; }
+        public List<string> SUPERVISOR { get; set; }
+        public List<string> SPM { get; set; }
+        public List<string> Direct_GPM { get; set; }
+        public List<string> DIRECTOR { get; set; }
+        public string COST_CENTER { get; set; }
+        public List<string> PROJECT { get; set; }
+        public List<string> SKILL { get; set; }
+        public List<string> DESIGNATION { get; set; }
+        public List<string> BAND { get; set; }
+        public string JOINING_DATE { get; set; }
+        public List<string> LOCATION { get; set; }
+        public List<string> BUILDING { get; set; }
+        public string WKS { get; set; }
+        public List<string> VENDOR_COMPANY { get; set; }
+        public List<string> STATUS { get; set; }
+        public string STATUS_CHANGE_DATE { get; set; }
+        public string BACKFILL_COMMENT { get; set; }
+        public List<string> GENDER { get; set; }
+    }
+
+    public class ResourceId
+    {
+        //public string btnAction { get; set; }
+        public string RECID { get; set; }
+        public string EMPID { get; set; }
+        public string TYPE { get; set; }
+        public string RESNAME { get; set; }
+        public string SUPERVISOR { get; set; }
+        public string SPM { get; set; }
+        public string Direct_GPM { get; set; }
+        public string DIRECTOR { get; set; }
+        public string COST_CENTER { get; set; }
+        public string PROJECT { get; set; }
+        public string SKILL { get; set; }
+        public string DESIGNATION { get; set; }
+        public string BAND { get; set; }
+        public string JOINING_DATE { get; set; }
+        public string LOCATION { get; set; }
+        public string BUILDING { get; set; }
+        public string WKS { get; set; }
+        public string VENDOR_COMPANY { get; set; }
+        public string STATUS { get; set; }
+        public string STATUS_CHANGE_DATE { get; set; }
+        public string BACKFILL_COMMENT { get; set; }
+        public string GENDER { get; set; }
+    }
+    public class ProjectwiseDetails
+    {
+        public string Project { get; set; }
+        public string Supervisor { get; set; }
+        public int Emp { get; set; }
+        public int VIVM { get; set; }
+        public int SOW { get; set; }
+        public int TotResCount { get; set; }
+        public int SUPVCCnt { get; set; }
+        public int RESCCnt { get; set; }
+    }
+    public class SkillwiseDetails
+    {
+        public int Count { get; set; }
+        public string Primary_skill { get; set; }
+        public string Head { get; set; }
+    }
+    public class Skillset
+    {
+        public string SkillSet { get; set; }
+        public int Total { get; set; }
+        public double Percentage { get; set; }
+    }
+
+    public class ProjDet
+    {
+
+        public string PROJECT { get; set; }
+        public int Total { get; set; }
+        public double Percentage { get; set; }
+    }
+    public class CapacityPlanDet
+    {
+        public string HeadName { get; set; }
+        public string PrimarySkill { get; set; }
+        public int ResCount { get; set; }
+        public double Diffrence { get; set; }
+        public double Ask_Skill { get; set; }
+    }
+    public class GrandTotalCapacityDet
+    {
+        public int totResCount { get; set; }
+        public decimal totDiffrence { get; set; }
+        public decimal totAsk_Skill { get; set; }
+        public string HeadName { get; set; }
+    }
+
+    public class CapacityModel
+    {
+        public CapacityPlan CapacityData { get; set; }
+    }
+
+    public class CapacityPlan
+    {
+        public string CPID { get; set; }
+        public string MONTH { get; set; }
+        public string DIR { get; set; }
+        public string SPM { get; set; }
+        public string SKILL { get; set; }
+        public decimal Avail { get; set; }
+        public decimal ASK { get; set; }
+        public string WR { get; set; }
+        public string SPMID { get; set; }
+        public string COST_TRACKER { get; set; }
+        public string PROGRAM { get; set; }
+        public string PROJECT { get; set; }
+        public int LOE { get; set; }
+        public int PRIORITY { get; set; }
+        public string COMMENT { get; set; }
+        public string RELEASE_DATE { get; set; }
+        public string SUPERVISOR { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime UpdatedDate { get; set; }
+    }
+
+    public class ResourceEstimations
+    {
+        public List<Estimation> EstimationsColl { get; set; }
+    }
+
+    public class Estimation
+    {
+        public int ROW_ID { get; set; }
+        public string EST_MONTH { get; set; }
+        public int RECID { get; set; }
+        public string RESOURCENAME { get; set; }
+        public string SPMID { get; set; }
+        public string COST_TRACKER { get; set; }
+        public string PROGRAM { get; set; }
+        public string PROJECT { get; set; }
+        public string WORK_ACTIVITY { get; set; }
+        public string IR_CR { get; set; }
+        public string WORK_ACTIVITY_DESC { get; set; }
+        public int EST_HRS { get; set; }
+        public DateTime START_DATE { get; set; }
+        public DateTime END_DATE { get; set; }
+        public int IS_ACTIVE { get; set; }
+        public string UPDATED_BY { get; set; }
+        public DateTime UPDATED_DT { get; set; }
+    }
+}
