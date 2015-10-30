@@ -1,4 +1,5 @@
-Enter file contents hereinsert into tCustomerInfo values  ('VZT4098', '350,5th Ave,EmpireStateBuilding')
+Enter file contents here
+insert into tCustomerInfo values  ('VZT4098', '350,5th Ave,EmpireStateBuilding')
 insert into tcustomerinfo values('VZT4099','31, Milkstreet,Boston, MA')
 
 update tcustomerinfo set strAddress='350,5th Ave,EmpireStateBuilding NY' where 
