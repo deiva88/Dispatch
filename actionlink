@@ -1,1 +1,55 @@
-Enter file contents here @Html.ActionLink(redirectionParams[0].Trim(), "GUIDButtonClick", new { LogViewer_SelectedGuid = redirectionParams[0].Trim(), LogViewer_SelectedDBID = redirectionParams[1].Trim() }, new { @class = "ViewGUIDClick", target = "_blank" })
+@using NCOGWebTools.Models
+@{
+    Layout = null;
+}
+@Styles.Render("~/Content/css")
+
+@if (ViewBag.dsTransLogList != null)
+{
+    <div id="content" style="width :auto">
+
+        @*<table class="ListView" align="center">*@
+            <table class="table table-striped">
+
+                <thead>
+                    <tr>
+                        <th class="Gridth">strGUID</th>
+                        <th class="Gridth">strTrackingId</th>
+                        <th class="Gridth">strServiceName</th>
+                        <th class="Gridth">dtmAppTimeStamp</th>
+                        <th class="Gridth">dtmUniversalTime</th>
+                        <th class="Gridth">strServerName</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    @foreach (System.Data.DataRow row in Model.dsTransLogList.Rows)
+                    {
+                        <tr>
+                            @for (int i = 0; i < row.ItemArray.Length; i++)
+                            {
+
+                                if (i == 0)
+                                //if (row.Table.Columns[i].ColumnName == "Link")
+                                {
+                                    string[] redirectionParams = row.ItemArray[i].ToString().Split(new char[] { '|' });
+                                    <td class="Gridtd">
+                                        @Html.ActionLink(redirectionParams[0].Trim(), "GUIDButtonClick", new { LogViewer_SelectedGuid = redirectionParams[0].Trim(), LogViewer_SelectedDBID = redirectionParams[1].Trim() }, new { @class = "ViewGUIDClick", target = "_blank" })
+                                        @*<a href="#">@row.ItemArray[i].ToString()</a> new { LogViewer_SelectedGuid =redirectionParams[0].Trim(), LogViewer_SelectedDBID = redirectionParams[1].Trim(), ResBand = row.Table.Columns[i], selectioncriteria = "BandwiseEmpDet" }*@
+                                    </td>
+                                }
+
+                                else
+                                {
+                                    <td class="Gridtd">@(row.ItemArray[i].ToString())</td>
+                                }
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+    </div>
+     
+}
+
