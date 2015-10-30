@@ -1,8 +1,8 @@
-CREATE procedure GetNearestTechnician
+alter procedure GetNearestTechnician
 (
 @strexpertize varchar(50),
-@intLatitude int,
-@intLongitude int
+@intLatitude float,
+@intLongitude float
 )
 as
 BEGIN
@@ -15,3 +15,4 @@ BEGIN
 acos(sin(@intLatitude) * sin(intLatitude) + cos(@intLatitude) * cos(intLatitude) * cos(intLongitude - (@intLongitude))) * 6371 <= 10
 set nocount off;
 END
+GO
