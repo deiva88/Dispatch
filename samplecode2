@@ -1,0 +1,148 @@
+Enter file contents here [HttpPost]
+        public ActionResult RunQueryButtonClick(FormCollection form)
+        {
+            LogDetails logdet = new LogDetails();
+            LogViewer logviewobj = new LogViewer();
+            DataTable dtemp = new DataTable();
+            logdet.tbTimeoutval = Convert.ToString(form["tbTimeout"]);
+            logdet.tbStTmval = Convert.ToString(form["tbStTm"]);
+            logdet.tbEnTmval = Convert.ToString(form["tbEnTm"]);
+            logdet.tbTopval = Convert.ToString(form["tbTop"]);
+            if (form["dbsrchopt"] == "Environment")
+            {
+                logdet.rbByEnvtChecked = true;
+            }
+            else
+            {
+                logdet.rbByEnvtChecked = false;
+            }
+
+            logdet.dbListval = Convert.ToString(form["dbList"]);
+            logdet.ddlPrimarySearchval = Convert.ToString(form["ddlPrimarySearch"]);
+            logdet.tbTrkIdval = Convert.ToString(form["tbTrkId"]);
+            logdet.calStDateval = Convert.ToString(form["calStDate"]);
+            logdet.calEndDt = Convert.ToString(form["calEndDt"]);
+            if (form["svcOpt"] == "rbSvcEq")
+            {
+                logdet.rbSvcEqChecked = true;
+                logdet.rbSvcNeChecked = false;
+                logdet.rbSvcLikeqChecked = false;
+            }
+            else if (form["svcOpt"] == "rbSvcNe")
+            {
+                logdet.rbSvcEqChecked = false;
+                logdet.rbSvcNeChecked = true;
+                logdet.rbSvcLikeqChecked = false;
+            }
+            else if (form["svcOpt"] == "rbSvcLike")
+            {
+                logdet.rbSvcEqChecked = false;
+                logdet.rbSvcNeChecked = false;
+                logdet.rbSvcLikeqChecked = true;
+            }
+            if (form["srvrOpt"] == "rbSrvrEq")
+            {
+                logdet.rbSrvrEqChecked = true;
+                logdet.rbSrvrNeChecked = false;
+                logdet.rbSrvrLikeChecked = false;
+            }
+            else if (form["srvrOpt"] == "rbSrvrNe")
+            {
+                logdet.rbSrvrEqChecked = false;
+                logdet.rbSrvrNeChecked = true;
+                logdet.rbSrvrLikeChecked = false;
+            }
+            else if (form["srvrOpt"] == "rbSrvrLike")
+            {
+                logdet.rbSrvrEqChecked = false;
+                logdet.rbSrvrNeChecked = false;
+                logdet.rbSrvrLikeChecked = true;
+            }
+            if (form["ltOpt"] == "rbLtEq")
+            {
+                logdet.rbLtEqChecked = true;
+                logdet.rbLtNeChecked = false;
+                logdet.rbLtLikeChecked = false;
+            }
+            else if (form["ltOpt"] == "rbLtNe")
+            {
+                logdet.rbLtEqChecked = false;
+                logdet.rbLtNeChecked = true;
+                logdet.rbLtLikeChecked = false;
+            }
+            else if (form["ltOpt"] == "rbLtLike")
+            {
+                logdet.rbLtEqChecked = false;
+                logdet.rbLtNeChecked = false;
+                logdet.rbLtLikeChecked = true;
+            }
+            if (form["idOpt"] == "rbIdEq")
+            {
+                logdet.rbIdEqChecked = true;
+                logdet.rbIdNeChecked = false;
+                logdet.rbIdLikeChecked = false;
+            }
+            else if (form["idOpt"] == "rbIdNe")
+            {
+                logdet.rbIdEqChecked = false;
+                logdet.rbIdNeChecked = true;
+                logdet.rbIdLikeChecked = false;
+            }
+            else if (form["idOpt"] == "rbIdLike")
+            {
+                logdet.rbIdEqChecked = false;
+                logdet.rbIdNeChecked = false;
+                logdet.rbIdLikeChecked = true;
+            }
+
+            logdet.tbLogTypeval = Convert.ToString(form["tbLogType"]);
+            logdet.tbServiceNameval = Convert.ToString(form["tbServiceName"]);
+            logdet.tbServerNameval = Convert.ToString(form["tbServerName"]);
+            logdet.tbInstanceDataval = Convert.ToString(form["tbInstanceData"]);
+            logdet.tbXmlContainsval = Convert.ToString(form["tbXmlContains"]);
+            dtemp = logviewobj.DoDbQuery(logdet);
+            //logdet.dsTransLogList = logviewobj.DoDbQuery(logdet);
+            DataTable dtTransLogList = new DataTable();
+            dtTransLogList.Columns.Add("Link");
+            dtTransLogList.Columns.Add("strTrackingId");
+            dtTransLogList.Columns.Add("strServiceName");
+            dtTransLogList.Columns.Add("dtmAppTimeStamp");
+            dtTransLogList.Columns.Add("dtmUniversalTime");
+            dtTransLogList.Columns.Add("strServerName");
+            //dtTransLogList.Columns.Add("strGUID");
+
+            //return RedirectToAction("DoDbQuery", logdet);
+            //logdet.dsTransLogList = dsTransLogList1.Tables[0];
+            if (dtemp.Rows.Count > 0)
+            {
+                foreach (DataRow item in dtemp.Rows)
+                {
+                    DataRow dr = dtTransLogList.NewRow();
+                    dr["Link"] = Convert.ToString(item["LINK"]);
+                    dr["strTrackingId"] = Convert.ToString(item["strTrackingId"]);
+                    dr["strServiceName"] = Convert.ToString(item["strServiceName"]);
+                    dr["dtmAppTimeStamp"] = Convert.ToString(item["dtmAppTimeStamp"]);
+                    dr["dtmUniversalTime"] = Convert.ToString(item["dtmUniversalTime"]);
+                    dr["strServerName"] = Convert.ToString(item["strServerName"]);
+                    //dr["strGUID"] = Convert.ToString(item["strGUID"]);
+                    dtTransLogList.Rows.Add(dr);
+
+                }
+                logdet.dsTransLogList = dtTransLogList;
+            }
+
+            ViewBag.dsTransLogList = "Table";
+
+
+            return PartialView("_LogDetails", logdet);
+            //return View("LogViewer");
+        }
+        
+            public JsonResult dbList_SelectedIndexChange(string dbListval, string tbRgnHdval, string ddlTrackIdPrefixval, string ddlTrackIdPrefixtext)
+        {
+            LogViewer logviewobj = new LogViewer();
+            List<SelectListItem> lsttrackPref = new List<SelectListItem>();
+            lsttrackPref = logviewobj.dbList_SelectedIndexChanged(dbListval, tbRgnHdval, ddlTrackIdPrefixval, ddlTrackIdPrefixtext, out tbRgnHdval);
+            ViewData["tbRgnHdval_new"] = tbRgnHdval;
+            return Json(new { lsttrackPref, tbRgnHdval });
+        }
