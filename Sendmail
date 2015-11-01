@@ -1,0 +1,28 @@
+ body = Environment.NewLine + EmpNBody + Environment.NewLine + Environment.NewLine + "CertificationID:" + CertId +
+                                Environment.NewLine + Environment.NewLine + "ManagerName:" + MgrName +
+                                Environment.NewLine + Environment.NewLine + Signature + Environment.NewLine;
+                            this.SendEmail(ToMail, "", EmpNewSub + "Pending", body);
+                            
+                            private void SendEmail(string distro, string cc, string subject, string body)
+        {
+            try
+            {
+                string msgFrom = ConfigurationManager.AppSettings["MessageFrom"];
+                string smtpServer = ConfigurationManager.AppSettings["SMTPServer"];
+
+                MailMessage msg = new MailMessage(msgFrom, distro);
+                //msg.To = distro;
+                //msg.From = msgFrom;
+                msg.Subject = subject;
+                msg.Body = body;
+                SmtpClient client = new SmtpClient(smtpServer);
+                client.Send(msg);
+                //SmtpMail.SmtpServer = smtpServer;
+                //SmtpMail.Send(msg);
+            }
+            catch (Exception ex)
+            {
+                this.lblError.Visible = true;
+                this.lblError.Text = "Internal processing error. Contact NCOG Prod Support.";
+            }
+        }
